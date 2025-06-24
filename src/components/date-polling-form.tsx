@@ -38,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon, PlusCircle, Trash2, Check, X } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, Check, X, Pencil } from "lucide-react";
 import type { AvailabilityData } from "@/lib/types";
 
 const dateAvailabilitySchema = z.object({
@@ -131,6 +131,11 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
     }
   }
 
+  const handleEditParticipant = (index: number) => {
+    const participantData = form.getValues().participants[index];
+    update(index, { ...participantData, isEditing: true });
+  };
+
   return (
     <Card className="w-full max-w-4xl shadow-lg">
       <CardHeader>
@@ -151,9 +156,9 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                     <p className="text-muted-foreground text-sm">Click the button below to add someone to the plan.</p>
                  </div>
               )}
-              {fields.map((field, index) => (
+              {fields.map((participantField, index) => (
                 <div
-                  key={field.id}
+                  key={participantField.id}
                   className="flex flex-col gap-4 rounded-lg border bg-background p-4"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
@@ -164,14 +169,14 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                         <FormItem className="flex-grow">
                           <FormLabel>Participant {index + 1}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter name..." {...field} />
+                            <Input placeholder="Enter name..." {...field} disabled={!participantField.isEditing} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <div className="flex items-center gap-1 self-start pt-6 sm:ml-auto sm:pt-2">
-                      {field.isEditing ? (
+                      {participantField.isEditing ? (
                         <>
                           <Button
                             type="button"
@@ -195,16 +200,28 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                           </Button>
                         </>
                       ) : (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-muted-foreground hover:text-destructive"
-                          onClick={() => remove(index)}
-                        >
-                          <Trash2 className="h-5 w-5" />
-                          <span className="sr-only">Remove participant</span>
-                        </Button>
+                         <>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={() => handleEditParticipant(index)}
+                          >
+                            <Pencil className="h-5 w-5" />
+                            <span className="sr-only">Edit participant</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => remove(index)}
+                          >
+                            <Trash2 className="h-5 w-5" />
+                            <span className="sr-only">Remove participant</span>
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -224,6 +241,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                                   "w-full justify-start text-left font-normal md:w-[240px]",
                                   !field.value?.length && "text-muted-foreground"
                                 )}
+                                disabled={!participantField.isEditing}
                               >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {field.value?.length > 0 ? (
@@ -262,6 +280,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                                       const updatedAvailabilities = field.value.map(a => a.date.getTime() === availability.date.getTime() ? { ...a, time: time } : a);
                                       field.onChange(updatedAvailabilities);
                                   }}
+                                  disabled={!participantField.isEditing}
                                 >
                                   <SelectTrigger className="h-8 w-[190px] flex-shrink-0 bg-background">
                                     <SelectValue />
