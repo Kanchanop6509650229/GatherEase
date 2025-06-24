@@ -22,7 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Users, ArrowLeft } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 
 type AvailabilityMatrixProps = {
   data: AvailabilityData;
@@ -34,14 +34,14 @@ type AvailabilityMatrixProps = {
 export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBack }: AvailabilityMatrixProps) {
   const { uniqueDates, availabilityMap, bestDateInfo } = useMemo(() => {
     const allDates = data.flatMap((p) => p.availabilities.map(a => a.date));
-    const uniqueDateStrings = [...new Set(allDates.map((d) => d.toISOString().split("T")[0]))];
-    const uniqueDates = uniqueDateStrings.map((ds) => new Date(ds)).sort((a, b) => a.getTime() - b.getTime());
+    const uniqueDateTimes = [...new Set(allDates.map((d) => startOfDay(d).getTime()))];
+    const uniqueDates = uniqueDateTimes.map((t) => new Date(t)).sort((a, b) => a.getTime() - b.getTime());
 
-    const availabilityMap = new Map<string, Map<string, string>>();
+    const availabilityMap = new Map<string, Map<number, string>>();
     for (const participant of data) {
-      const dateMap = new Map<string, string>();
+      const dateMap = new Map<number, string>();
       for (const availability of participant.availabilities) {
-        dateMap.set(availability.date.toISOString().split("T")[0], availability.time);
+        dateMap.set(startOfDay(availability.date).getTime(), availability.time);
       }
       availabilityMap.set(participant.name, dateMap);
     }
@@ -50,10 +50,10 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
     let maxAttendance = 0;
     
     for (const date of uniqueDates) {
-        const dateString = date.toISOString().split('T')[0];
+        const key = startOfDay(date).getTime();
         let currentAttendance = 0;
         for (const participant of data) {
-            if (availabilityMap.get(participant.name)?.has(dateString)) {
+            if (availabilityMap.get(participant.name)?.has(key)) {
                 currentAttendance++;
             }
         }
@@ -125,8 +125,8 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
                     </div>
                   </TableCell>
                   {uniqueDates.map((date) => {
-                    const dateString = date.toISOString().split("T")[0];
-                    const availableTime = availabilityMap.get(participant.name)?.get(dateString);
+                    const key = startOfDay(date).getTime();
+                    const availableTime = availabilityMap.get(participant.name)?.get(key);
                     const isBestDate = bestDateInfo.date?.getTime() === date.getTime();
                     return (
                       <TableCell key={date.toISOString()} className={cn("text-center align-top pt-3", isBestDate && "bg-primary/10")}>
