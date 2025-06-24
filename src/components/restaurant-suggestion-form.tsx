@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { getRestaurantSuggestion } from "@/app/actions";
-import type { SuggestRestaurantOutput } from "@/ai/flows/suggest-restaurant";
+import type { SuggestRestaurantInput, SuggestRestaurantOutput } from "@/ai/flows/suggest-restaurant";
 import { Loader2, Sparkles } from "lucide-react";
 
 const formSchema = z.object({
@@ -34,7 +34,7 @@ const formSchema = z.object({
 });
 
 type RestaurantSuggestionFormProps = {
-  onSuggestion: (data: SuggestRestaurantOutput[]) => void;
+  onSuggestion: (data: SuggestRestaurantOutput[], input: SuggestRestaurantInput) => void;
 };
 
 export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionFormProps) {
@@ -60,7 +60,7 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
         description: result.error,
       });
     } else {
-      onSuggestion(result);
+      onSuggestion(result, values);
     }
   };
 

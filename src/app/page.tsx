@@ -2,12 +2,16 @@
 
 import { useState } from 'react';
 import type { AvailabilityData } from '@/lib/types';
-import type { SuggestRestaurantOutput } from '@/ai/flows/suggest-restaurant';
+import type { SuggestRestaurantInput, SuggestRestaurantOutput } from '@/ai/flows/suggest-restaurant';
 import { DatePollingForm } from '@/components/date-polling-form';
 import { AvailabilityMatrix } from '@/components/availability-matrix';
 import { RestaurantSuggestionForm } from '@/components/restaurant-suggestion-form';
 import { RestaurantResultCard } from '@/components/restaurant-result-card';
 import { Icons } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { Loader2, RefreshCcw } from 'lucide-react';
+import { getRestaurantSuggestion } from './actions';
+import { useToast } from '@/hooks/use-toast';
 
 const LOCAL_STORAGE_KEY = 'gather-ease-participants';
 
@@ -15,25 +19,57 @@ export default function Home() {
   const [availability, setAvailability] = useState<AvailabilityData | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestRestaurantOutput[] | null>(null);
   const [bestDate, setBestDate] = useState<Date | null>(null);
+  const [excludedRestaurants, setExcludedRestaurants] = useState<string[]>([]);
+  const [searchCriteria, setSearchCriteria] = useState<SuggestRestaurantInput | null>(null);
+  const [isSearchingAgain, setIsSearchingAgain] = useState(false);
+  const { toast } = useToast();
 
   const handleFindDates = (data: AvailabilityData) => {
     setAvailability(data);
     setSuggestions(null);
     setBestDate(null);
+    setExcludedRestaurants([]);
+    setSearchCriteria(null);
   };
 
   const handleBestDateCalculated = (date: Date | null) => {
     setBestDate(date);
   };
 
-  const handleSuggestionGenerated = (data: SuggestRestaurantOutput[]) => {
+  const handleSuggestionGenerated = (data: SuggestRestaurantOutput[], input: SuggestRestaurantInput) => {
     setSuggestions(data);
+    setSearchCriteria(input);
+    setExcludedRestaurants(prev => [...prev, ...data.map(s => s.restaurantName)]);
+  };
+
+  const handleSearchAgain = async () => {
+    if (!searchCriteria) return;
+
+    setIsSearchingAgain(true);
+    const result = await getRestaurantSuggestion({
+      ...searchCriteria,
+      excludedRestaurants,
+    });
+    setIsSearchingAgain(false);
+
+    if ('error' in result) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't find more restaurants.",
+        description: result.error,
+      });
+    } else {
+      setSuggestions(result);
+      setExcludedRestaurants(prev => [...prev, ...result.map(s => s.restaurantName)]);
+    }
   };
 
   const handleReset = () => {
     setAvailability(null);
     setSuggestions(null);
     setBestDate(null);
+    setExcludedRestaurants([]);
+    setSearchCriteria(null);
     try {
       localStorage.removeItem(LOCAL_STORAGE_KEY);
       // Force a re-render of the form or a page reload to clear the state
@@ -47,6 +83,8 @@ export default function Home() {
     setAvailability(null);
     setSuggestions(null);
     setBestDate(null);
+    setExcludedRestaurants([]);
+    setSearchCriteria(null);
   };
 
   return (
@@ -93,8 +131,18 @@ export default function Home() {
               </div>
               <div className="space-y-4">
                 {suggestions.map((s, index) => (
-                  <RestaurantResultCard key={index} data={s} rank={index + 1} />
+                  <RestaurantResultCard key={s.restaurantName} data={s} rank={index + 1} />
                 ))}
+              </div>
+              <div className="flex justify-center gap-4">
+                 <Button variant="outline" onClick={handleSearchAgain} disabled={isSearchingAgain}>
+                  {isSearchingAgain ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                  )}
+                  Find New Suggestions
+                </Button>
               </div>
             </div>
           )}

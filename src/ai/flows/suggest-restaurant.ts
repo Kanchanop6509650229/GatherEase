@@ -16,6 +16,7 @@ const SuggestRestaurantInputSchema = z.object({
     .string()
     .describe('Dietary restrictions for the group (e.g., vegetarian, vegan, gluten-free).'),
   location: z.string().describe('The location of the group (e.g., city, address).'),
+  excludedRestaurants: z.array(z.string()).optional().describe('A list of restaurant names to exclude from the suggestions.'),
 });
 export type SuggestRestaurantInput = z.infer<typeof SuggestRestaurantInputSchema>;
 
@@ -48,6 +49,13 @@ Please return a diverse list of options.
 For each restaurant, provide all the requested information.
 Ensure that all suggested restaurants are currently in operation and not permanently closed.
 Rank the restaurants from best to worst, considering a combination of both a high star rating and a substantial number of reviews as the primary sorting criteria. A restaurant with a 4.6 rating and 2,500 reviews should be ranked higher than one with a 4.9 rating but only 50 reviews.
+
+{{#if excludedRestaurants}}
+Do not include any of the following restaurants in your suggestions, as they have already been rejected:
+{{#each excludedRestaurants}}
+- {{{this}}}
+{{/each}}
+{{/if}}
 
 Dietary Restrictions: {{{dietaryRestrictions}}}
 Location: {{{location}}}

@@ -18,7 +18,7 @@ export async function getRestaurantSuggestion(
       dietaryRestrictions: input.dietaryRestrictions || 'None',
     });
     if (!result || result.length === 0) {
-      return { error: 'Could not find any restaurant suggestions. Please try a different location.' };
+      return { error: 'Could not find any new restaurant suggestions. Please try starting over.' };
     }
     
     // Overwrite the googleMapsUrl with a reliable search link
