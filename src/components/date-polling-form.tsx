@@ -116,8 +116,6 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ participants: participantsToSave }),
       }).catch(e => console.error('Failed to save participants', e));
-    } else {
-      fetch(`/api/rooms/${roomId}`, { method: 'DELETE' }).catch(e => console.error('Failed to delete room', e));
     }
   }, [watchedParticipants, roomId]);
 
