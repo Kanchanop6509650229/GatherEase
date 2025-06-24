@@ -68,7 +68,7 @@ export function createRoom(id: string, name: string) {
 
 export function getRooms(): { id: string; name: string }[] {
   init();
-  const out = run('SELECT id, name FROM rooms', true);
+  const out = run('SELECT id, COALESCE(name, "") AS name FROM rooms', true);
   if (!out) return [];
   try {
     return JSON.parse(out) as { id: string; name: string }[];
