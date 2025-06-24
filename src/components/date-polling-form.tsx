@@ -30,7 +30,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, PlusCircle, Trash2, Clock } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 import type { AvailabilityData } from "@/lib/types";
 
 const participantSchema = z.object({
@@ -76,30 +83,24 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
             dates: p.dates.map((d: string) => new Date(d)),
           }));
           replace(participantsWithDates);
-        } else {
-          append({ id: crypto.randomUUID(), name: "", dates: [], time: "" });
         }
-      } else {
-        append({ id: crypto.randomUUID(), name: "", dates: [], time: "" });
       }
     } catch (e) {
       console.error("Failed to load or parse saved data", e);
-      append({ id: crypto.randomUUID(), name: "", dates: [], time: "" });
     }
-  }, []);
+  }, [replace]);
 
   const watchedParticipants = form.watch("participants");
   React.useEffect(() => {
+    // Only save to localStorage if there's at least one participant
     if (watchedParticipants && watchedParticipants.length > 0) {
-      const hasData = watchedParticipants.some(
-        (p) => p.name || p.dates.length > 0 || p.time
+      localStorage.setItem(
+        LOCAL_STORAGE_KEY,
+        JSON.stringify({ participants: watchedParticipants })
       );
-      if (hasData) {
-        localStorage.setItem(
-          LOCAL_STORAGE_KEY,
-          JSON.stringify({ participants: watchedParticipants })
-        );
-      }
+    } else {
+      // If all participants are removed, clear localStorage
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
     }
   }, [watchedParticipants]);
 
@@ -114,13 +115,19 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
           1. Plan Your Get-Together
         </CardTitle>
         <CardDescription>
-          Add participants, their available dates, and preferred times. The data is saved automatically.
+          Add participants and their available dates. The data is saved automatically as you type.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)}>
           <CardContent className="space-y-6">
-            <div className="space-y-4">
+            <div className="space-y-4 min-h-[10rem]">
+              {fields.length === 0 && (
+                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 h-full p-8 text-center">
+                    <p className="text-muted-foreground font-semibold">No participants yet.</p>
+                    <p className="text-muted-foreground text-sm">Click the button below to add someone to the plan.</p>
+                 </div>
+              )}
               {fields.map((field, index) => (
                 <div
                   key={field.id}
@@ -143,11 +150,22 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                     control={form.control}
                     name={`participants.${index}.time`}
                     render={({ field }) => (
-                      <FormItem className="sm:w-[200px] flex-shrink-0">
+                      <FormItem className="sm:w-[220px] flex-shrink-0">
                         <FormLabel>Preferred Time</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., 6pm - 9pm" {...field} />
-                        </FormControl>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a time range" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Any Time">Any Time</SelectItem>
+                            <SelectItem value="Morning (9am-12pm)">Morning (9am-12pm)</SelectItem>
+                            <SelectItem value="Afternoon (12pm-5pm)">Afternoon (12pm-5pm)</SelectItem>
+                            <SelectItem value="Evening (5pm-9pm)">Evening (5pm-9pm)</SelectItem>
+                            <SelectItem value="Late Night (9pm+)">Late Night (9pm+)</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -200,18 +218,18 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                       </FormItem>
                     )}
                   />
-                  {fields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="mt-auto text-muted-foreground hover:text-destructive sm:ml-2"
-                      onClick={() => remove(index)}
-                    >
-                      <Trash2 className="h-5 w-5" />
-                      <span className="sr-only">Remove participant</span>
-                    </Button>
-                  )}
+                  
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="mt-auto text-muted-foreground hover:text-destructive sm:ml-2"
+                    onClick={() => remove(index)}
+                  >
+                    <Trash2 className="h-5 w-5" />
+                    <span className="sr-only">Remove participant</span>
+                  </Button>
+                  
                 </div>
               ))}
             </div>
@@ -220,7 +238,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
               variant="outline"
               size="sm"
               onClick={() =>
-                append({ id: crypto.randomUUID(), name: "", dates: [], time: "" })
+                append({ id: crypto.randomUUID(), name: "", dates: [], time: "Any Time" })
               }
             >
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -232,6 +250,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
               type="submit"
               size="lg"
               className="bg-accent text-accent-foreground hover:bg-accent/90"
+              disabled={fields.length === 0}
             >
               Find Best Date
             </Button>
