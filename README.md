@@ -2,7 +2,9 @@
 
 GatherEase is a small demo built with **Next.js** and **Firebase App Hosting**.
 It helps a group decide when and where to meet by combining date polling with
-AI‑powered restaurant suggestions.
+AI‑powered restaurant suggestions. Participant responses are now stored in a
+local **SQLite** database so that everyone accessing the same link can see the
+same data.
 
 ## Features
 
@@ -27,6 +29,9 @@ is defined in [`src/ai/flows/suggest-restaurant.ts`](src/ai/flows/suggest-restau
    ```bash
    npm run dev
    ```
+
+   This command will automatically create `db.sqlite` in the project root if it
+   doesn't already exist.
 
 3. In a separate terminal, run the Genkit development server for the AI flow
 

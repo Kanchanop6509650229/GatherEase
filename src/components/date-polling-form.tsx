@@ -63,11 +63,10 @@ const formSchema = z.object({
 
 type DatePollingFormProps = {
   onSubmit: (data: AvailabilityData) => void;
+  roomId: string;
 };
 
-const LOCAL_STORAGE_KEY = 'gather-ease-participants-v2';
-
-export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
+export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -83,26 +82,27 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
   });
 
   React.useEffect(() => {
-    try {
-      const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        if (parsed.participants && parsed.participants.length > 0) {
-          const participantsWithDates = parsed.participants.map((p: any) => ({
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/rooms/${roomId}`);
+        const data = await res.json();
+        if (data.participants && data.participants.length > 0) {
+          const participantsWithDates = data.participants.map((p: any) => ({
             ...p,
             availabilities: p.availabilities.map((a: { date: string, time: string }) => ({
               date: new Date(a.date),
               time: a.time,
             })),
-            isEditing: false, 
+            isEditing: false,
           }));
           replace(participantsWithDates);
         }
+      } catch (e) {
+        console.error('Failed to load participants', e);
       }
-    } catch (e) {
-      console.error("Failed to load or parse saved data", e);
-    }
-  }, [replace]);
+    };
+    load();
+  }, [replace, roomId]);
 
   const watchedParticipants = form.watch("participants");
   React.useEffect(() => {
@@ -111,14 +111,15 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
       .map(({ isEditing, ...rest }) => rest);
 
     if (participantsToSave.length > 0) {
-      localStorage.setItem(
-        LOCAL_STORAGE_KEY,
-        JSON.stringify({ participants: participantsToSave })
-      );
+      fetch(`/api/rooms/${roomId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participants: participantsToSave }),
+      }).catch(e => console.error('Failed to save participants', e));
     } else {
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      fetch(`/api/rooms/${roomId}`, { method: 'DELETE' }).catch(e => console.error('Failed to delete room', e));
     }
-  }, [watchedParticipants]);
+  }, [watchedParticipants, roomId]);
 
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
     const confirmedParticipants = values.participants

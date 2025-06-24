@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { AvailabilityData } from '@/lib/types';
 import type { SuggestRestaurantInput, SuggestRestaurantOutput } from '@/ai/flows/suggest-restaurant';
 import { DatePollingForm } from '@/components/date-polling-form';
@@ -13,9 +14,12 @@ import { Loader2, RefreshCcw } from 'lucide-react';
 import { getRestaurantSuggestion } from './actions';
 import { useToast } from '@/hooks/use-toast';
 
-const LOCAL_STORAGE_KEY = 'gather-ease-participants-v2';
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [roomId, setRoomId] = useState('');
   const [availability, setAvailability] = useState<AvailabilityData | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestRestaurantOutput[] | null>(null);
   const [bestDate, setBestDate] = useState<Date | null>(null);
@@ -23,6 +27,15 @@ export default function Home() {
   const [searchCriteria, setSearchCriteria] = useState<SuggestRestaurantInput | null>(null);
   const [isSearchingAgain, setIsSearchingAgain] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    let id = searchParams.get('room');
+    if (!id) {
+      id = crypto.randomUUID();
+      router.replace(`?room=${id}`);
+    }
+    setRoomId(id);
+  }, [router, searchParams]);
 
   const handleFindDates = (data: AvailabilityData) => {
     setAvailability(data);
@@ -80,18 +93,19 @@ export default function Home() {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     setAvailability(null);
     setSuggestions(null);
     setBestDate(null);
     setExcludedRestaurants([]);
     setSearchCriteria(null);
     try {
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
-      // Force a re-render of the form or a page reload to clear the state
-      window.location.reload();
+      if (roomId) {
+        await fetch(`/api/rooms/${roomId}`, { method: 'DELETE' });
+      }
+      router.refresh();
     } catch (e) {
-      console.error("Failed to clear saved data", e);
+      console.error('Failed to clear saved data', e);
     }
   }
 
@@ -118,7 +132,7 @@ export default function Home() {
           
           {!availability && (
             <div className="animate-in fade-in-0 slide-in-from-top-4 duration-500">
-              <DatePollingForm onSubmit={handleFindDates} />
+              {roomId && <DatePollingForm onSubmit={handleFindDates} roomId={roomId} />}
             </div>
           )}
 
