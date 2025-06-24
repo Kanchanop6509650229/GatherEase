@@ -25,7 +25,7 @@ function init() {
   if (!existsSync(DB_PATH)) {
     execFileSync('sqlite3', [DB_PATH], { input: '' });
   }
-  run('CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, participants TEXT)');
+  run('CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, name TEXT, participants TEXT)');
 }
 
 export function getParticipants(id: string): AvailabilityData | null {
@@ -57,5 +57,55 @@ export function saveParticipants(id: string, participants: AvailabilityData) {
 
 export function deleteParticipants(id: string) {
   init();
-  run(`DELETE FROM rooms WHERE id='${id.replace(/'/g, "''")}'`);
+  run(`UPDATE rooms SET participants=NULL WHERE id='${id.replace(/'/g, "''")}'`);
+}
+
+export function createRoom(id: string, name: string) {
+  init();
+  const safeName = name.replace(/'/g, "''");
+  run(`INSERT INTO rooms (id, name) VALUES ('${id.replace(/'/g, "''")}', '${safeName}') ON CONFLICT(id) DO UPDATE SET name='${safeName}'`);
+}
+
+export function getRooms(): { id: string; name: string }[] {
+  init();
+  const out = run('SELECT id, name FROM rooms', true);
+  if (!out) return [];
+  try {
+    return JSON.parse(out) as { id: string; name: string }[];
+  } catch (e) {
+    console.error('Failed to parse DB output', e);
+    return [];
+  }
+}
+
+export function updateRoomName(id: string, name: string) {
+  init();
+  run(`UPDATE rooms SET name='${name.replace(/'/g, "''")}' WHERE id='${id.replace(/'/g, "''")}'`);
+}
+
+export function getRoom(
+  id: string
+): { id: string; name: string | null; participants: AvailabilityData | null } | null {
+  init();
+  const out = run(`SELECT id, name, participants FROM rooms WHERE id='${id.replace(/'/g, "''")}'`, true);
+  if (!out) return null;
+  try {
+    const rows = JSON.parse(out);
+    if (!rows.length) return null;
+    const row = rows[0];
+    let participants: AvailabilityData | null = null;
+    if (row.participants) {
+      participants = JSON.parse(row.participants);
+      participants.forEach((p: any) => {
+        p.availabilities = p.availabilities.map((a: any) => ({
+          date: new Date(a.date),
+          time: a.time,
+        }));
+      });
+    }
+    return { id: row.id, name: row.name, participants };
+  } catch (e) {
+    console.error('Failed to parse DB output', e);
+    return null;
+  }
 }
