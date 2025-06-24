@@ -46,6 +46,7 @@ const prompt = ai.definePrompt({
   prompt: `Suggest a list of 3 to 5 restaurants based on the following dietary restrictions and location.
 Please return a diverse list of options.
 For each restaurant, provide all the requested information.
+Ensure that all suggested restaurants are currently in operation and not permanently closed.
 Rank the restaurants from best to worst, considering a combination of both a high star rating and a substantial number of reviews as the primary sorting criteria. A restaurant with a 4.6 rating and 2,500 reviews should be ranked higher than one with a 4.9 rating but only 50 reviews.
 
 Dietary Restrictions: {{{dietaryRestrictions}}}
