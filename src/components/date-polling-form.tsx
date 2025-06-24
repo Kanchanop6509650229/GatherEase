@@ -105,9 +105,6 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
   }, [replace, roomId]);
 
   const watchedParticipants = form.watch("participants");
-
-  const prevCountRef = React.useRef(0);
-
   React.useEffect(() => {
     const participantsToSave = watchedParticipants
       .filter(p => !p.isEditing)
@@ -119,13 +116,9 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ participants: participantsToSave }),
       }).catch(e => console.error('Failed to save participants', e));
-    } else if (prevCountRef.current > 0) {
-      fetch(`/api/rooms/${roomId}`, { method: 'DELETE' }).catch(e =>
-        console.error('Failed to delete room', e)
-      );
+    } else {
+      fetch(`/api/rooms/${roomId}`, { method: 'DELETE' }).catch(e => console.error('Failed to delete room', e));
     }
-
-    prevCountRef.current = participantsToSave.length;
   }, [watchedParticipants, roomId]);
 
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
