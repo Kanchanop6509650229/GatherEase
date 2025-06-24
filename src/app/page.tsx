@@ -13,7 +13,7 @@ import { Loader2, RefreshCcw } from 'lucide-react';
 import { getRestaurantSuggestion } from './actions';
 import { useToast } from '@/hooks/use-toast';
 
-const LOCAL_STORAGE_KEY = 'gather-ease-participants';
+const LOCAL_STORAGE_KEY = 'gather-ease-participants-v2';
 
 export default function Home() {
   const [availability, setAvailability] = useState<AvailabilityData | null>(null);
