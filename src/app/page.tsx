@@ -103,7 +103,7 @@ export default function Home() {
       if (roomId) {
         await fetch(`/api/rooms/${roomId}`, { method: 'DELETE' });
       }
-      window.location.reload();
+      router.refresh();
     } catch (e) {
       console.error('Failed to clear saved data', e);
     }
