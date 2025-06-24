@@ -21,16 +21,17 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Users, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Users, Clock, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 
 type AvailabilityMatrixProps = {
   data: AvailabilityData;
   onBestDateCalculated: (date: Date | null) => void;
   onReset: () => void;
+  onGoBack: () => void;
 };
 
-export function AvailabilityMatrix({ data, onBestDateCalculated, onReset }: AvailabilityMatrixProps) {
+export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBack }: AvailabilityMatrixProps) {
   const { uniqueDates, availabilityMap, bestDateInfo } = useMemo(() => {
     const allDates = data.flatMap((p) => p.dates);
     const uniqueDateStrings = [...new Set(allDates.map((d) => d.toISOString().split("T")[0]))];
@@ -135,7 +136,11 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset }: Avai
           </Table>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-end">
+      <CardFooter className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onGoBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
         <Button variant="outline" onClick={onReset}>Start Over</Button>
       </CardFooter>
     </Card>

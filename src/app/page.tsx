@@ -43,6 +43,12 @@ export default function Home() {
     }
   }
 
+  const handleGoBack = () => {
+    setAvailability(null);
+    setSuggestion(null);
+    setBestDate(null);
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
@@ -66,6 +72,7 @@ export default function Home() {
                 data={availability}
                 onBestDateCalculated={handleBestDateCalculated}
                 onReset={handleReset}
+                onGoBack={handleGoBack}
               />
             </div>
           )}
