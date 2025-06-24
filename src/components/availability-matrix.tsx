@@ -50,7 +50,8 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
     let maxAttendance = 0;
     
     for (const date of uniqueDates) {
-        const key = startOfDay(date).getTime();
+        const startOfDayDate = startOfDay(date);
+        const key = startOfDayDate.getTime();
         let currentAttendance = 0;
         for (const participant of data) {
             if (availabilityMap.get(participant.name)?.has(key)) {
