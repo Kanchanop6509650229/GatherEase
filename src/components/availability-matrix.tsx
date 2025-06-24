@@ -63,10 +63,17 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
           timeMap = new Map<string, number>();
           attendanceMap.set(dayKey, timeMap);
         }
-        timeMap.set(
-          availability.time,
-          (timeMap.get(availability.time) || 0) + 1
-        );
+
+        if (availability.time === "Any Time") {
+          for (const slot of TIME_ORDER) {
+            timeMap.set(slot, (timeMap.get(slot) || 0) + 1);
+          }
+        } else {
+          timeMap.set(
+            availability.time,
+            (timeMap.get(availability.time) || 0) + 1
+          );
+        }
       }
       availabilityMap.set(participant.name, dateMap);
     }
@@ -176,7 +183,9 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
                     const isBestDate =
                       bestDateInfo.date?.getTime() === date.getTime();
                     const isBestDateTime =
-                      isBestDate && availableTime === bestDateInfo.time;
+                      isBestDate &&
+                      (availableTime === "Any Time" ||
+                        availableTime === bestDateInfo.time);
                     return (
                       <TableCell
                         key={date.toISOString()}
