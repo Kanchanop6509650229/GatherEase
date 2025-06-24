@@ -41,11 +41,15 @@ import {
 import { CalendarIcon, PlusCircle, Trash2, Check, X } from "lucide-react";
 import type { AvailabilityData } from "@/lib/types";
 
+const dateAvailabilitySchema = z.object({
+  date: z.date(),
+  time: z.string(),
+});
+
 const participantSchema = z.object({
   id: z.string(),
   name: z.string().min(2, "Name must be at least 2 characters."),
-  dates: z.array(z.date()).min(1, "Please select at least one date."),
-  time: z.string().optional(),
+  availabilities: z.array(dateAvailabilitySchema).min(1, "Please select at least one date."),
   isEditing: z.boolean().optional(),
 });
 
@@ -59,7 +63,7 @@ type DatePollingFormProps = {
   onSubmit: (data: AvailabilityData) => void;
 };
 
-const LOCAL_STORAGE_KEY = 'gather-ease-participants';
+const LOCAL_STORAGE_KEY = 'gather-ease-participants-v2';
 
 export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -82,8 +86,11 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
         if (parsed.participants && parsed.participants.length > 0) {
           const participantsWithDates = parsed.participants.map((p: any) => ({
             ...p,
-            dates: p.dates.map((d: string) => new Date(d)),
-            isEditing: false, // Ensure loaded participants are not in edit mode
+            availabilities: p.availabilities.map((a: { date: string, time: string }) => ({
+              date: new Date(a.date),
+              time: a.time,
+            })),
+            isEditing: false, 
           }));
           replace(participantsWithDates);
         }
@@ -95,7 +102,6 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
 
   const watchedParticipants = form.watch("participants");
   React.useEffect(() => {
-    // Only save participants that are not in edit mode
     const participantsToSave = watchedParticipants
       .filter(p => !p.isEditing)
       .map(({ isEditing, ...rest }) => rest);
@@ -132,7 +138,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
           1. Plan Your Get-Together
         </CardTitle>
         <CardDescription>
-          Add participants and their available dates. The data is saved automatically as you type.
+          Add participants and specify their available dates and times.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -148,71 +154,80 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
               {fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="flex flex-col gap-4 rounded-lg border bg-background p-4 sm:flex-row sm:items-start"
+                  className="flex flex-col gap-4 rounded-lg border bg-background p-4"
                 >
-                  <FormField
-                    control={form.control}
-                    name={`participants.${index}.name`}
-                    render={({ field }) => (
-                      <FormItem className="flex-grow">
-                        <FormLabel>Participant {index + 1}</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter name..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`participants.${index}.time`}
-                    render={({ field }) => (
-                      <FormItem className="sm:w-[220px] flex-shrink-0">
-                        <FormLabel>Preferred Time</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                    <FormField
+                      control={form.control}
+                      name={`participants.${index}.name`}
+                      render={({ field }) => (
+                        <FormItem className="flex-grow">
+                          <FormLabel>Participant {index + 1}</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a time range" />
-                            </SelectTrigger>
+                            <Input placeholder="Enter name..." {...field} />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Any Time">Any Time</SelectItem>
-                            <SelectItem value="Morning (9am-12pm)">Morning (9am-12pm)</SelectItem>
-                            <SelectItem value="Afternoon (12pm-5pm)">Afternoon (12pm-5pm)</SelectItem>
-                            <SelectItem value="Evening (5pm-9pm)">Evening (5pm-9pm)</SelectItem>
-                            <SelectItem value="Late Night (9pm+)">Late Night (9pm+)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex items-center gap-1 self-start pt-6 sm:ml-auto sm:pt-2">
+                      {field.isEditing ? (
+                        <>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-green-600 hover:bg-green-100 hover:text-green-700"
+                            onClick={() => handleConfirmParticipant(index)}
+                          >
+                            <Check className="h-5 w-5" />
+                            <span className="sr-only">Confirm participant</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:bg-destructive/10"
+                            onClick={() => remove(index)}
+                          >
+                            <X className="h-5 w-5" />
+                            <span className="sr-only">Cancel</span>
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => remove(index)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                          <span className="sr-only">Remove participant</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
                   <FormField
                     control={form.control}
-                    name={`participants.${index}.dates`}
+                    name={`participants.${index}.availabilities`}
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Available Dates</FormLabel>
+                        <FormLabel>Available Dates & Times</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
                                 variant={"outline"}
                                 className={cn(
-                                  "w-full justify-start text-left font-normal sm:w-[240px]",
-                                  !field.value?.length &&
-                                    "text-muted-foreground"
+                                  "w-full justify-start text-left font-normal md:w-[240px]",
+                                  !field.value?.length && "text-muted-foreground"
                                 )}
                               >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {field.value?.length > 0 ? (
-                                  field.value.length > 1 ? (
-                                    <span>
-                                      {field.value.length} dates selected
-                                    </span>
-                                  ) : (
-                                    format(field.value[0], "PPP")
-                                  )
+                                  <span>{field.value.length} date(s) selected</span>
                                 ) : (
                                   <span>Pick dates</span>
                                 )}
@@ -222,8 +237,14 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                               mode="multiple"
-                              selected={field.value}
-                              onSelect={field.onChange}
+                              selected={field.value?.map(a => a.date)}
+                              onSelect={(dates) => {
+                                const newAvailabilities = (dates || []).map(date => {
+                                  const existing = field.value?.find(a => a.date.getTime() === date.getTime());
+                                  return existing || { date, time: "Any Time" };
+                                });
+                                field.onChange(newAvailabilities);
+                              }}
                               initialFocus
                               disabled={(date) =>
                                 date < new Date(new Date().setHours(0, 0, 0, 0))
@@ -231,49 +252,35 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                             />
                           </PopoverContent>
                         </Popover>
+                        <div className="space-y-2 pt-2 max-h-48 overflow-y-auto pr-2">
+                           {field.value?.slice().sort((a,b) => a.date.getTime() - b.date.getTime()).map((availability) => (
+                              <div key={availability.date.toISOString()} className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50">
+                                <span className="text-sm font-medium">{format(availability.date, "PPP")}</span>
+                                <Select
+                                  value={availability.time}
+                                  onValueChange={(time) => {
+                                      const updatedAvailabilities = field.value.map(a => a.date.getTime() === availability.date.getTime() ? { ...a, time: time } : a);
+                                      field.onChange(updatedAvailabilities);
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 w-[190px] flex-shrink-0 bg-background">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Any Time">Any Time</SelectItem>
+                                    <SelectItem value="Morning (9am-12pm)">Morning (9am-12pm)</SelectItem>
+                                    <SelectItem value="Afternoon (12pm-5pm)">Afternoon (12pm-5pm)</SelectItem>
+                                    <SelectItem value="Evening (5pm-9pm)">Evening (5pm-9pm)</SelectItem>
+                                    <SelectItem value="Late Night (9pm+)">Late Night (9pm+)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                           ))}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
-                  <div className="flex items-center gap-1 self-start pt-6 sm:ml-2 sm:mt-auto sm:pt-0">
-                    {field.isEditing ? (
-                      <>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-green-600 hover:bg-green-100 hover:text-green-700"
-                          onClick={() => handleConfirmParticipant(index)}
-                        >
-                          <Check className="h-5 w-5" />
-                          <span className="sr-only">Confirm participant</span>
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:bg-destructive/10"
-                          onClick={() => remove(index)}
-                        >
-                          <X className="h-5 w-5" />
-                          <span className="sr-only">Cancel</span>
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => remove(index)}
-                      >
-                        <Trash2 className="h-5 w-5" />
-                        <span className="sr-only">Remove participant</span>
-                      </Button>
-                    )}
-                  </div>
-                  
                 </div>
               ))}
             </div>
@@ -282,7 +289,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
               variant="outline"
               size="sm"
               onClick={() =>
-                append({ id: crypto.randomUUID(), name: "", dates: [], time: "Any Time", isEditing: true })
+                append({ id: crypto.randomUUID(), name: "", availabilities: [], isEditing: true })
               }
             >
               <PlusCircle className="mr-2 h-4 w-4" />

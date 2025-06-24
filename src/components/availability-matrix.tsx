@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Users, Clock, ArrowLeft } from "lucide-react";
+import { CheckCircle2, XCircle, Users, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 
 type AvailabilityMatrixProps = {
@@ -33,14 +33,17 @@ type AvailabilityMatrixProps = {
 
 export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBack }: AvailabilityMatrixProps) {
   const { uniqueDates, availabilityMap, bestDateInfo } = useMemo(() => {
-    const allDates = data.flatMap((p) => p.dates);
+    const allDates = data.flatMap((p) => p.availabilities.map(a => a.date));
     const uniqueDateStrings = [...new Set(allDates.map((d) => d.toISOString().split("T")[0]))];
     const uniqueDates = uniqueDateStrings.map((ds) => new Date(ds)).sort((a, b) => a.getTime() - b.getTime());
 
-    const availabilityMap = new Map<string, Set<string>>();
+    const availabilityMap = new Map<string, Map<string, string>>();
     for (const participant of data) {
-      const dateStrings = new Set(participant.dates.map((d) => d.toISOString().split("T")[0]));
-      availabilityMap.set(participant.name, dateStrings);
+      const dateMap = new Map<string, string>();
+      for (const availability of participant.availabilities) {
+        dateMap.set(availability.date.toISOString().split("T")[0], availability.time);
+      }
+      availabilityMap.set(participant.name, dateMap);
     }
     
     let bestDate: Date | null = null;
@@ -98,7 +101,6 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
             <TableHeader>
               <TableRow>
                 <TableHead className="sticky left-0 bg-card z-10 font-bold"><Users className="inline h-4 w-4 mr-2" />Participants</TableHead>
-                <TableHead className="w-[150px]"><Clock className="inline h-4 w-4 mr-2" />Time</TableHead>
                 {uniqueDates.map((date) => {
                    const isBestDate = bestDateInfo.date?.getTime() === date.getTime();
                   return (
@@ -115,17 +117,21 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
               {data.map((participant) => (
                 <TableRow key={participant.name}>
                   <TableCell className="sticky left-0 bg-card z-10 font-semibold">{participant.name}</TableCell>
-                  <TableCell>{participant.time || 'Any'}</TableCell>
                   {uniqueDates.map((date) => {
                     const dateString = date.toISOString().split("T")[0];
-                    const isAvailable = availabilityMap.get(participant.name)?.has(dateString);
+                    const availableTime = availabilityMap.get(participant.name)?.get(dateString);
                     const isBestDate = bestDateInfo.date?.getTime() === date.getTime();
                     return (
-                      <TableCell key={date.toISOString()} className={cn("text-center", isBestDate && "bg-primary/10")}>
-                        {isAvailable ? (
-                          <CheckCircle2 className="mx-auto h-6 w-6 text-green-600" />
+                      <TableCell key={date.toISOString()} className={cn("text-center align-top pt-3", isBestDate && "bg-primary/10")}>
+                        {availableTime ? (
+                           <div className="flex flex-col items-center justify-center gap-1">
+                             <CheckCircle2 className="h-6 w-6 text-green-500" />
+                             <span className="text-xs text-muted-foreground whitespace-nowrap">
+                               {availableTime === "Any Time" ? "Any" : availableTime.replace(/\s\(.*\)/, '')}
+                             </span>
+                           </div>
                         ) : (
-                          <XCircle className="mx-auto h-6 w-6 text-destructive opacity-60" />
+                          <XCircle className="mx-auto h-6 w-6 text-red-500 opacity-60" />
                         )}
                       </TableCell>
                     );

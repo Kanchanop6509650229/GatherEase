@@ -1,8 +1,12 @@
+export type DateAvailability = {
+  date: Date;
+  time: string;
+};
+
 export type ParticipantAvailability = {
   id: string;
   name: string;
-  dates: Date[];
-  time?: string;
+  availabilities: DateAvailability[];
 };
 
 export type AvailabilityData = ParticipantAvailability[];
