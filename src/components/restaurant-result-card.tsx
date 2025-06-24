@@ -49,7 +49,7 @@ export function RestaurantResultCard({ data }: RestaurantResultCardProps) {
       <CardContent className="grid gap-6 md:grid-cols-2">
         <div className="relative aspect-video w-full">
            <Image
-            src="https://placehold.co/600x400"
+            src={data.photoDataUri || "https://placehold.co/600x400.png"}
             alt={`A photo of ${data.restaurantName}`}
             fill
             className="rounded-lg object-cover"

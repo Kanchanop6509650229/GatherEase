@@ -25,6 +25,12 @@ const SuggestRestaurantOutputSchema = z.object({
   address: z.string().describe('The address of the restaurant.'),
   rating: z.number().describe('The rating of the restaurant (e.g., 4.5 out of 5).'),
   googleMapsUrl: z.string().describe('The Google Maps URL of the restaurant.'),
+  photoDataUri: z
+    .string()
+    .describe(
+      "A photo of the restaurant, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    )
+    .optional(),
 });
 export type SuggestRestaurantOutput = z.infer<typeof SuggestRestaurantOutputSchema>;
 
@@ -35,7 +41,7 @@ export async function suggestRestaurant(input: SuggestRestaurantInput): Promise<
 const prompt = ai.definePrompt({
   name: 'suggestRestaurantPrompt',
   input: {schema: SuggestRestaurantInputSchema},
-  output: {schema: SuggestRestaurantOutputSchema},
+  output: {schema: SuggestRestaurantOutputSchema.omit({photoDataUri: true})},
   prompt: `Suggest a restaurant based on the following dietary restrictions and location:
 
 Dietary Restrictions: {{{dietaryRestrictions}}}
@@ -51,7 +57,27 @@ const suggestRestaurantFlow = ai.defineFlow(
     outputSchema: SuggestRestaurantOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    const {output: textOutput} = await prompt(input);
+    if (!textOutput) {
+      throw new Error('Failed to get restaurant suggestion details.');
+    }
+
+    try {
+      const {media} = await ai.generate({
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        prompt: `A beautiful, photorealistic image of the exterior of a restaurant named "${textOutput.restaurantName}". The restaurant specializes in ${textOutput.cuisine} cuisine. The photo should look like it was taken for a food magazine.`,
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+        },
+      });
+
+      return {
+        ...textOutput,
+        photoDataUri: media?.url,
+      };
+    } catch (e) {
+      console.error('Image generation failed, returning text-only suggestion.', e);
+      return textOutput;
+    }
   }
 );
