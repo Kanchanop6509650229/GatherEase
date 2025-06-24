@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Users } from "lucide-react";
+import { CheckCircle2, XCircle, Users, Clock } from "lucide-react";
 import { format } from "date-fns";
 
 type AvailabilityMatrixProps = {
@@ -76,17 +76,18 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset }: Avai
       </CardHeader>
       <CardContent>
         {bestDateInfo.date ? (
-          <div className="mb-6 rounded-lg border border-chart-2 bg-card p-4 text-center">
-             <h3 className="font-semibold text-lg text-chart-2 font-headline">Best Date Found!</h3>
+          <div className="mb-6 rounded-lg border border-primary bg-primary/10 p-4 text-center">
+             <h3 className="font-headline font-semibold text-lg text-primary-foreground/90">Best Date Found!</h3>
             <p className="text-muted-foreground">
               The best day for your get-together is{" "}
               <span className="font-bold text-foreground">{format(bestDateInfo.date, "EEEE, MMMM do")}</span>
               , with{" "}
               <span className="font-bold text-foreground">{bestDateInfo.attendance} out of {data.length} people</span> available.
+              Check below for preferred times.
             </p>
           </div>
         ) : (
-          <div className="mb-6 rounded-lg border border-destructive bg-card p-4 text-center">
+          <div className="mb-6 rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
             <h3 className="font-semibold text-lg text-destructive font-headline">No Common Dates</h3>
             <p className="text-muted-foreground">Unfortunately, no single date works for everyone. You might need to add more dates.</p>
           </div>
@@ -96,6 +97,7 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset }: Avai
             <TableHeader>
               <TableRow>
                 <TableHead className="sticky left-0 bg-card z-10 font-bold"><Users className="inline h-4 w-4 mr-2" />Participants</TableHead>
+                <TableHead className="w-[150px]"><Clock className="inline h-4 w-4 mr-2" />Time</TableHead>
                 {uniqueDates.map((date) => {
                    const isBestDate = bestDateInfo.date?.getTime() === date.getTime();
                   return (
@@ -112,6 +114,7 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset }: Avai
               {data.map((participant) => (
                 <TableRow key={participant.name}>
                   <TableCell className="sticky left-0 bg-card z-10 font-semibold">{participant.name}</TableCell>
+                  <TableCell>{participant.time || 'Any'}</TableCell>
                   {uniqueDates.map((date) => {
                     const dateString = date.toISOString().split("T")[0];
                     const isAvailable = availabilityMap.get(participant.name)?.has(dateString);
@@ -119,7 +122,7 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset }: Avai
                     return (
                       <TableCell key={date.toISOString()} className={cn("text-center", isBestDate && "bg-primary/10")}>
                         {isAvailable ? (
-                          <CheckCircle2 className="mx-auto h-6 w-6 text-chart-2" />
+                          <CheckCircle2 className="mx-auto h-6 w-6 text-green-600" />
                         ) : (
                           <XCircle className="mx-auto h-6 w-6 text-destructive opacity-60" />
                         )}

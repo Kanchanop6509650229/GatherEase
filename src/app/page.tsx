@@ -9,6 +9,8 @@ import { RestaurantSuggestionForm } from '@/components/restaurant-suggestion-for
 import { RestaurantResultCard } from '@/components/restaurant-result-card';
 import { Icons } from '@/components/icons';
 
+const LOCAL_STORAGE_KEY = 'gather-ease-participants';
+
 export default function Home() {
   const [availability, setAvailability] = useState<AvailabilityData | null>(null);
   const [suggestion, setSuggestion] = useState<SuggestRestaurantOutput | null>(null);
@@ -32,6 +34,13 @@ export default function Home() {
     setAvailability(null);
     setSuggestion(null);
     setBestDate(null);
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      // Force a re-render of the form or a page reload to clear the state
+      window.location.reload();
+    } catch (e) {
+      console.error("Failed to clear saved data", e);
+    }
   }
 
   return (
