@@ -40,7 +40,7 @@ type AvailabilityMatrixProps = {
 };
 
 export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBack }: AvailabilityMatrixProps) {
-  const { uniqueDates, availabilityMap, bestDateInfo } = useMemo(() => {
+  const { uniqueDates, availabilityMap, bestDateInfo, rankedOptions } = useMemo(() => {
     const allDates = data.flatMap((p) => p.availabilities.map((a) => a.date));
     const uniqueDateTimes = [
       ...new Set(allDates.map((d) => startOfDay(d).getTime())),
@@ -81,17 +81,19 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
     let bestDate: Date | null = null;
     let bestTime: string | null = null;
     let maxAttendance = 0;
+    const rankedOptions: { date: Date; time: string; attendance: number }[] = [];
 
     for (const [day, timeMap] of attendanceMap) {
       for (const [time, count] of timeMap) {
+        rankedOptions.push({ date: new Date(day), time, attendance: count });
         const isBetter =
           count > maxAttendance ||
           (count === maxAttendance &&
             (bestDate === null ||
               day < bestDate.getTime() ||
-              (day === bestDate.getTime() &&
-                TIME_ORDER.indexOf(time) <
-                  TIME_ORDER.indexOf(bestTime ?? ""))));
+                (day === bestDate.getTime() &&
+                  TIME_ORDER.indexOf(time) <
+                    TIME_ORDER.indexOf(bestTime ?? ""))));
         if (isBetter) {
           maxAttendance = count;
           bestDate = new Date(day);
@@ -100,10 +102,18 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
       }
     }
 
+    rankedOptions.sort((a, b) => {
+      if (b.attendance !== a.attendance) return b.attendance - a.attendance;
+      if (a.date.getTime() !== b.date.getTime())
+        return a.date.getTime() - b.date.getTime();
+      return TIME_ORDER.indexOf(a.time) - TIME_ORDER.indexOf(b.time);
+    });
+
     return {
       uniqueDates,
       availabilityMap,
       bestDateInfo: { date: bestDate, time: bestTime, attendance: maxAttendance },
+      rankedOptions,
     };
   }, [data]);
 
@@ -135,6 +145,18 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
           <div className="mb-6 rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
             <h3 className="font-semibold text-lg text-destructive font-headline">No Common Dates</h3>
             <p className="text-muted-foreground">Unfortunately, no single date works for everyone. You might need to add more dates.</p>
+          </div>
+        )}
+        {bestDateInfo.date && rankedOptions.length > 1 && (
+          <div className="mb-6 rounded-lg border bg-muted/20 p-4">
+            <h4 className="font-headline font-semibold text-lg">Next Best Options</h4>
+            <ol className="mt-2 list-decimal list-inside space-y-1 text-muted-foreground">
+              {rankedOptions.slice(1, 4).map((opt) => (
+                <li key={`${opt.date.toISOString()}-${opt.time}`}>
+                  {format(opt.date, "EEEE, MMMM do")} at {opt.time} – {opt.attendance} / {data.length}
+                </li>
+              ))}
+            </ol>
           </div>
         )}
         <div className="overflow-x-auto rounded-lg border">
