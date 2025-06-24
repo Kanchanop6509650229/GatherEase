@@ -2,6 +2,7 @@
 
 import { useMemo, useEffect } from "react";
 import type { AvailabilityData } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
