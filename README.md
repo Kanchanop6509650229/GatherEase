@@ -63,7 +63,7 @@ server. To ensure everyone sees the same information:
 1. **Run a single server instance.** Start `npm run dev` on one machine and make
    sure other devices access the app via this server's URL.
 2. **Share the room link.** When a room is created, the page URL contains a
-   `?room=ID` query parameter. Share this full link (or use the "Share Link"
+   `?room=ID` query parameter. Share this full link (or use the "Share Your Room"
    button) so others join the exact same room.
 
 The server requires the `sqlite3` command line tool. If you encounter errors

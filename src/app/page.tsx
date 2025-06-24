@@ -126,6 +126,11 @@ function HomeContent() {
             GatherEase
           </h1>
         </a>
+        <div className="ml-auto">
+          <Button variant="outline" size="sm" onClick={handleCopyLink}>
+            Share Your Room
+          </Button>
+        </div>
       </header>
       <main className="flex flex-1 flex-col items-center gap-8 p-4 md:p-8">
         <div className="w-full max-w-4xl space-y-8">
