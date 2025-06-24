@@ -38,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon, PlusCircle, Trash2, Check, X, Pencil } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, Check, X, Pencil, ChevronDown } from "lucide-react";
 import type { AvailabilityData } from "@/lib/types";
 
 const dateAvailabilitySchema = z.object({
@@ -66,6 +66,8 @@ type DatePollingFormProps = {
 const LOCAL_STORAGE_KEY = 'gather-ease-participants-v2';
 
 export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
+  const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -123,18 +125,30 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
     onSubmit(confirmedParticipants);
   };
   
+  const addParticipant = () => {
+    const newId = crypto.randomUUID();
+    append({ id: newId, name: "", availabilities: [], isEditing: true });
+    setExpanded(prev => ({...prev, [newId]: true}));
+  };
+
   const handleConfirmParticipant = async (index: number) => {
     const isValid = await form.trigger(`participants.${index}`);
     if (isValid) {
       const participantData = form.getValues().participants[index];
       update(index, { ...participantData, isEditing: false });
+      setExpanded(prev => ({...prev, [participantData.id]: false}));
     }
   }
 
   const handleEditParticipant = (index: number) => {
     const participantData = form.getValues().participants[index];
     update(index, { ...participantData, isEditing: true });
+    setExpanded(prev => ({...prev, [participantData.id]: true}));
   };
+  
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  }
 
   return (
     <Card className="w-full max-w-4xl shadow-lg">
@@ -156,25 +170,34 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                     <p className="text-muted-foreground text-sm">Click the button below to add someone to the plan.</p>
                  </div>
               )}
-              {fields.map((participantField, index) => (
+              {fields.map((participantField, index) => {
+                const isExpanded = !!expanded[participantField.id];
+                return (
                 <div
                   key={participantField.id}
                   className="flex flex-col gap-4 rounded-lg border bg-background p-4"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                    <FormField
-                      control={form.control}
-                      name={`participants.${index}.name`}
-                      render={({ field }) => (
-                        <FormItem className="flex-grow">
-                          <FormLabel>Participant {index + 1}</FormLabel>
+                    <FormItem 
+                      className="flex-grow"
+                      onClick={!participantField.isEditing ? () => toggleExpand(participantField.id) : undefined}
+                      style={{ cursor: !participantField.isEditing ? 'pointer' : 'default' }}
+                    >
+                      <FormLabel className="flex items-center gap-2">
+                        Participant {index + 1}
+                        {!participantField.isEditing && <ChevronDown className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")} />}
+                      </FormLabel>
+                      <FormField
+                        control={form.control}
+                        name={`participants.${index}.name`}
+                        render={({ field }) => (
                           <FormControl>
                             <Input placeholder="Enter name..." {...field} disabled={!participantField.isEditing} />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        )}
+                      />
+                      <FormMessage {...form.getFieldState(`participants.${index}.name`)} />
+                    </FormItem>
                     <div className="flex items-center gap-1 self-start pt-6 sm:ml-auto sm:pt-2">
                       {participantField.isEditing ? (
                         <>
@@ -225,91 +248,91 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                       )}
                     </div>
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name={`participants.${index}.availabilities`}
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Available Dates & Times</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full justify-start text-left font-normal md:w-[240px]",
-                                  !field.value?.length && "text-muted-foreground"
-                                )}
-                                disabled={!participantField.isEditing}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value?.length > 0 ? (
-                                  <span>{field.value.length} date(s) selected</span>
-                                ) : (
-                                  <span>Pick dates</span>
-                                )}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="multiple"
-                              selected={field.value?.map(a => a.date)}
-                              onSelect={(dates) => {
-                                const newAvailabilities = (dates || []).map(date => {
-                                  const existing = field.value?.find(a => a.date.getTime() === date.getTime());
-                                  return existing || { date, time: "Any Time" };
-                                });
-                                field.onChange(newAvailabilities);
-                              }}
-                              initialFocus
-                              disabled={(date) =>
-                                date < new Date(new Date().setHours(0, 0, 0, 0))
-                              }
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <div className="space-y-2 pt-2 max-h-48 overflow-y-auto pr-2">
-                           {field.value?.slice().sort((a,b) => a.date.getTime() - b.date.getTime()).map((availability) => (
-                              <div key={availability.date.toISOString()} className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50">
-                                <span className="text-sm font-medium">{format(availability.date, "PPP")}</span>
-                                <Select
-                                  value={availability.time}
-                                  onValueChange={(time) => {
-                                      const updatedAvailabilities = field.value.map(a => a.date.getTime() === availability.date.getTime() ? { ...a, time: time } : a);
-                                      field.onChange(updatedAvailabilities);
-                                  }}
+                  
+                  {(isExpanded || participantField.isEditing) && (
+                    <FormField
+                      control={form.control}
+                      name={`participants.${index}.availabilities`}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Available Dates & Times</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full justify-start text-left font-normal md:w-[240px]",
+                                    !field.value?.length && "text-muted-foreground"
+                                  )}
                                   disabled={!participantField.isEditing}
                                 >
-                                  <SelectTrigger className="h-8 w-[190px] flex-shrink-0 bg-background">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Any Time">Any Time</SelectItem>
-                                    <SelectItem value="Morning (9am-12pm)">Morning (9am-12pm)</SelectItem>
-                                    <SelectItem value="Afternoon (12pm-5pm)">Afternoon (12pm-5pm)</SelectItem>
-                                    <SelectItem value="Evening (5pm-9pm)">Evening (5pm-9pm)</SelectItem>
-                                    <SelectItem value="Late Night (9pm+)">Late Night (9pm+)</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                           ))}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value?.length > 0 ? (
+                                    <span>{field.value.length} date(s) selected</span>
+                                  ) : (
+                                    <span>Pick dates</span>
+                                  )}
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="multiple"
+                                selected={field.value?.map(a => a.date)}
+                                onSelect={(dates) => {
+                                  const newAvailabilities = (dates || []).map(date => {
+                                    const existing = field.value?.find(a => a.date.getTime() === date.getTime());
+                                    return existing || { date, time: "Any Time" };
+                                  });
+                                  field.onChange(newAvailabilities);
+                                }}
+                                initialFocus
+                                disabled={(date) =>
+                                  date < new Date(new Date().setHours(0, 0, 0, 0))
+                                }
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <div className="space-y-2 pt-2 max-h-48 overflow-y-auto pr-2">
+                            {field.value?.slice().sort((a,b) => a.date.getTime() - b.date.getTime()).map((availability) => (
+                                <div key={availability.date.toISOString()} className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50">
+                                  <span className="text-sm font-medium">{format(availability.date, "PPP")}</span>
+                                  <Select
+                                    value={availability.time}
+                                    onValueChange={(time) => {
+                                        const updatedAvailabilities = field.value.map(a => a.date.getTime() === availability.date.getTime() ? { ...a, time: time } : a);
+                                        field.onChange(updatedAvailabilities);
+                                    }}
+                                    disabled={!participantField.isEditing}
+                                  >
+                                    <SelectTrigger className="h-8 w-[190px] flex-shrink-0 bg-background">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Any Time">Any Time</SelectItem>
+                                      <SelectItem value="Morning (9am-12pm)">Morning (9am-12pm)</SelectItem>
+                                      <SelectItem value="Afternoon (12pm-5pm)">Afternoon (12pm-5pm)</SelectItem>
+                                      <SelectItem value="Evening (5pm-9pm)">Evening (5pm-9pm)</SelectItem>
+                                      <SelectItem value="Late Night (9pm+)">Late Night (9pm+)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                            ))}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
-              ))}
+              )})}
             </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
-                append({ id: crypto.randomUUID(), name: "", availabilities: [], isEditing: true })
-              }
+              onClick={addParticipant}
             >
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Participant
