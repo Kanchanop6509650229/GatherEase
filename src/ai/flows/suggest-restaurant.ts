@@ -31,7 +31,7 @@ const SuggestRestaurantOutputSchema = z.object({
 export type SuggestRestaurantOutput = z.infer<typeof SuggestRestaurantOutputSchema>;
 
 const SuggestRestaurantListSchema = z.object({
-  suggestions: z.array(SuggestRestaurantOutputSchema).describe("A list of 3-5 restaurant suggestions."),
+  suggestions: z.array(SuggestRestaurantOutputSchema).describe("A list of 3 restaurant suggestions."),
 });
 
 
@@ -44,7 +44,7 @@ const prompt = ai.definePrompt({
   name: 'suggestRestaurantPrompt',
   input: {schema: SuggestRestaurantInputSchema},
   output: {schema: SuggestRestaurantListSchema},
-  prompt: `Suggest a list of 3 to 5 restaurants based on the following dietary restrictions and location.
+  prompt: `Suggest a list of 3 restaurants based on the following dietary restrictions and location.
 Please return a diverse list of options.
 For each restaurant, provide all the requested information.
 Ensure that all suggested restaurants are currently in operation and not permanently closed.
