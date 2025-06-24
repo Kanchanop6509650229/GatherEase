@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { execFileSync, spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import path from 'path';
 import type { AvailabilityData } from './types';
@@ -7,10 +7,21 @@ const DB_PATH = path.join(process.cwd(), 'db.sqlite');
 
 function run(sql: string, json = false): string {
   const args = json ? ['-json', DB_PATH] : [DB_PATH];
-  return execFileSync('sqlite3', args, { input: sql, encoding: 'utf8' }).trim();
+  try {
+    return execFileSync('sqlite3', args, { input: sql, encoding: 'utf8' }).trim();
+  } catch (e) {
+    console.error('Failed to execute sqlite3 command. Make sure SQLite3 is installed.', e);
+    return '';
+  }
 }
 
 function init() {
+  // Ensure the sqlite3 CLI is available
+  const check = spawnSync('sqlite3', ['-version']);
+  if (check.error) {
+    throw new Error('sqlite3 command not found. Please install SQLite3 to use GatherEase.');
+  }
+
   if (!existsSync(DB_PATH)) {
     execFileSync('sqlite3', [DB_PATH], { input: '' });
   }
