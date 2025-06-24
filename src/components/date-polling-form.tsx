@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -37,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, Check, X } from "lucide-react";
 import type { AvailabilityData } from "@/lib/types";
 
 const participantSchema = z.object({
@@ -45,6 +46,7 @@ const participantSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   dates: z.array(z.date()).min(1, "Please select at least one date."),
   time: z.string().optional(),
+  isEditing: z.boolean().optional(),
 });
 
 const formSchema = z.object({
@@ -67,7 +69,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
     },
   });
 
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, append, remove, replace, update } = useFieldArray({
     control: form.control,
     name: "participants",
   });
@@ -81,6 +83,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
           const participantsWithDates = parsed.participants.map((p: any) => ({
             ...p,
             dates: p.dates.map((d: string) => new Date(d)),
+            isEditing: false, // Ensure loaded participants are not in edit mode
           }));
           replace(participantsWithDates);
         }
@@ -92,21 +95,35 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
 
   const watchedParticipants = form.watch("participants");
   React.useEffect(() => {
-    // Only save to localStorage if there's at least one participant
-    if (watchedParticipants && watchedParticipants.length > 0) {
+    // Only save participants that are not in edit mode
+    const participantsToSave = watchedParticipants
+      .filter(p => !p.isEditing)
+      .map(({ isEditing, ...rest }) => rest);
+
+    if (participantsToSave.length > 0) {
       localStorage.setItem(
         LOCAL_STORAGE_KEY,
-        JSON.stringify({ participants: watchedParticipants })
+        JSON.stringify({ participants: participantsToSave })
       );
     } else {
-      // If all participants are removed, clear localStorage
       localStorage.removeItem(LOCAL_STORAGE_KEY);
     }
   }, [watchedParticipants]);
 
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit(values.participants);
+    const confirmedParticipants = values.participants
+      .filter(p => !p.isEditing)
+      .map(({ isEditing, ...rest }) => rest);
+    onSubmit(confirmedParticipants);
   };
+  
+  const handleConfirmParticipant = async (index: number) => {
+    const isValid = await form.trigger(`participants.${index}`);
+    if (isValid) {
+      const participantData = form.getValues().participants[index];
+      update(index, { ...participantData, isEditing: false });
+    }
+  }
 
   return (
     <Card className="w-full max-w-4xl shadow-lg">
@@ -219,16 +236,43 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                     )}
                   />
                   
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="mt-auto text-muted-foreground hover:text-destructive sm:ml-2"
-                    onClick={() => remove(index)}
-                  >
-                    <Trash2 className="h-5 w-5" />
-                    <span className="sr-only">Remove participant</span>
-                  </Button>
+                  <div className="flex items-center gap-1 self-start pt-6 sm:ml-2 sm:mt-auto sm:pt-0">
+                    {field.isEditing ? (
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-green-600 hover:bg-green-100 hover:text-green-700"
+                          onClick={() => handleConfirmParticipant(index)}
+                        >
+                          <Check className="h-5 w-5" />
+                          <span className="sr-only">Confirm participant</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => remove(index)}
+                        >
+                          <X className="h-5 w-5" />
+                          <span className="sr-only">Cancel</span>
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash2 className="h-5 w-5" />
+                        <span className="sr-only">Remove participant</span>
+                      </Button>
+                    )}
+                  </div>
                   
                 </div>
               ))}
@@ -238,7 +282,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
               variant="outline"
               size="sm"
               onClick={() =>
-                append({ id: crypto.randomUUID(), name: "", dates: [], time: "Any Time" })
+                append({ id: crypto.randomUUID(), name: "", dates: [], time: "Any Time", isEditing: true })
               }
             >
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -250,7 +294,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
               type="submit"
               size="lg"
               className="bg-accent text-accent-foreground hover:bg-accent/90"
-              disabled={fields.length === 0}
+              disabled={fields.length === 0 || fields.some(p => p.isEditing)}
             >
               Find Best Date
             </Button>
