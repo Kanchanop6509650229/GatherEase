@@ -26,21 +26,6 @@ function init() {
     execFileSync('sqlite3', [DB_PATH], { input: '' });
   }
   run('CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, name TEXT, participants TEXT)');
-  // Upgrade schema for older databases missing columns
-  const schema = run('PRAGMA table_info(rooms)', true);
-  if (schema) {
-    try {
-      const columns = new Set((JSON.parse(schema) as any[]).map((c) => c.name));
-      if (!columns.has('name')) {
-        run('ALTER TABLE rooms ADD COLUMN name TEXT');
-      }
-      if (!columns.has('participants')) {
-        run('ALTER TABLE rooms ADD COLUMN participants TEXT');
-      }
-    } catch (e) {
-      console.error('Failed to ensure DB schema', e);
-    }
-  }
 }
 
 export function getParticipants(id: string): AvailabilityData | null {
