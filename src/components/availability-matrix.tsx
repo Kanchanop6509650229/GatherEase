@@ -76,19 +76,19 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset }: Avai
       </CardHeader>
       <CardContent>
         {bestDateInfo.date ? (
-          <div className="mb-6 rounded-lg border border-primary/20 bg-primary/10 p-4 text-center">
-             <h3 className="font-semibold text-lg text-primary-foreground font-headline">Best Date Found!</h3>
-            <p className="text-primary-foreground/90">
+          <div className="mb-6 rounded-lg border border-chart-2 bg-card p-4 text-center">
+             <h3 className="font-semibold text-lg text-chart-2 font-headline">Best Date Found!</h3>
+            <p className="text-muted-foreground">
               The best day for your get-together is{" "}
-              <span className="font-bold">{format(bestDateInfo.date, "EEEE, MMMM do")}</span>
+              <span className="font-bold text-foreground">{format(bestDateInfo.date, "EEEE, MMMM do")}</span>
               , with{" "}
-              <span className="font-bold">{bestDateInfo.attendance} out of {data.length} people</span> available.
+              <span className="font-bold text-foreground">{bestDateInfo.attendance} out of {data.length} people</span> available.
             </p>
           </div>
         ) : (
-          <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-center">
-            <h3 className="font-semibold text-lg text-destructive-foreground">No Common Dates</h3>
-            <p className="text-destructive-foreground/90">Unfortunately, no single date works for everyone. You might need to add more dates.</p>
+          <div className="mb-6 rounded-lg border border-destructive bg-card p-4 text-center">
+            <h3 className="font-semibold text-lg text-destructive font-headline">No Common Dates</h3>
+            <p className="text-muted-foreground">Unfortunately, no single date works for everyone. You might need to add more dates.</p>
           </div>
         )}
         <div className="overflow-x-auto rounded-lg border">
@@ -119,9 +119,9 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset }: Avai
                     return (
                       <TableCell key={date.toISOString()} className={cn("text-center", isBestDate && "bg-primary/10")}>
                         {isAvailable ? (
-                          <CheckCircle2 className="mx-auto h-6 w-6 text-green-500" />
+                          <CheckCircle2 className="mx-auto h-6 w-6 text-chart-2" />
                         ) : (
-                          <XCircle className="mx-auto h-6 w-6 text-red-400 opacity-60" />
+                          <XCircle className="mx-auto h-6 w-6 text-destructive opacity-60" />
                         )}
                       </TableCell>
                     );
