@@ -34,7 +34,7 @@ const formSchema = z.object({
 });
 
 type RestaurantSuggestionFormProps = {
-  onSuggestion: (data: SuggestRestaurantOutput) => void;
+  onSuggestion: (data: SuggestRestaurantOutput[]) => void;
 };
 
 export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionFormProps) {
@@ -118,7 +118,7 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
               ) : (
                 <Sparkles className="mr-2 h-4 w-4" />
               )}
-              Suggest a Restaurant
+              Suggest Restaurants
             </Button>
           </CardFooter>
         </form>

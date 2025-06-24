@@ -8,7 +8,7 @@ import {
 
 export async function getRestaurantSuggestion(
   input: SuggestRestaurantInput
-): Promise<SuggestRestaurantOutput | { error: string }> {
+): Promise<SuggestRestaurantOutput[] | { error: string }> {
   try {
     if (!input.location || input.location.trim().length < 3) {
       return { error: 'Please enter a valid location.' };
@@ -17,6 +17,9 @@ export async function getRestaurantSuggestion(
       ...input,
       dietaryRestrictions: input.dietaryRestrictions || 'None',
     });
+    if (!result || result.length === 0) {
+      return { error: 'Could not find any restaurant suggestions. Please try a different location.' };
+    }
     return result;
   } catch (e) {
     console.error(e);
