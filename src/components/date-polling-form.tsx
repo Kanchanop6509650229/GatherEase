@@ -81,6 +81,8 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
     name: "participants",
   });
 
+  const [loaded, setLoaded] = React.useState(false);
+
   React.useEffect(() => {
     const load = async () => {
       try {
@@ -99,6 +101,8 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
         }
       } catch (e) {
         console.error('Failed to load participants', e);
+      } finally {
+        setLoaded(true);
       }
     };
     load();
@@ -106,6 +110,7 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
 
   const watchedParticipants = form.watch("participants");
   React.useEffect(() => {
+    if (!loaded) return;
     const participantsToSave = watchedParticipants
       .filter(p => !p.isEditing)
       .map(({ isEditing, ...rest }) => rest);
@@ -119,7 +124,7 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
     } else {
       fetch(`/api/rooms/${roomId}`, { method: 'DELETE' }).catch(e => console.error('Failed to delete room', e));
     }
-  }, [watchedParticipants, roomId]);
+  }, [watchedParticipants, roomId, loaded]);
 
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
     const confirmedParticipants = values.participants
