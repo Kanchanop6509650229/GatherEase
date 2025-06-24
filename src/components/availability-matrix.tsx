@@ -116,7 +116,14 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
             <TableBody>
               {data.map((participant) => (
                 <TableRow key={participant.name}>
-                  <TableCell className="sticky left-0 bg-card z-10 font-semibold">{participant.name}</TableCell>
+                  <TableCell className="sticky left-0 bg-card z-10 font-semibold">
+                    <div className="flex flex-col">
+                      <span>{participant.name}</span>
+                      {participant.notes && (
+                        <span className="text-xs text-muted-foreground">{participant.notes}</span>
+                      )}
+                    </div>
+                  </TableCell>
                   {uniqueDates.map((date) => {
                     const dateString = date.toISOString().split("T")[0];
                     const availableTime = availabilityMap.get(participant.name)?.get(dateString);

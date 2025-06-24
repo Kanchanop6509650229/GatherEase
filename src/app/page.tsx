@@ -64,6 +64,22 @@ export default function Home() {
     }
   };
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Link copied!",
+        description: "Share it with your friends.",
+      });
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Copy failed",
+        description: "Unable to copy link.",
+      });
+    }
+  };
+
   const handleReset = () => {
     setAvailability(null);
     setSuggestions(null);
@@ -142,6 +158,9 @@ export default function Home() {
                     <RefreshCcw className="mr-2 h-4 w-4" />
                   )}
                   Find New Suggestions
+                </Button>
+                <Button variant="outline" onClick={handleCopyLink}>
+                  Share Link
                 </Button>
               </div>
             </div>

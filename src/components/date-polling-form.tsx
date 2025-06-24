@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -50,6 +51,7 @@ const participantSchema = z.object({
   id: z.string(),
   name: z.string().min(2, "Name must be at least 2 characters."),
   availabilities: z.array(dateAvailabilitySchema).min(1, "Please select at least one date."),
+  notes: z.string().max(200, "Notes must be under 200 characters.").optional(),
   isEditing: z.boolean().optional(),
 });
 
@@ -127,7 +129,7 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
   
   const addParticipant = () => {
     const newId = crypto.randomUUID();
-    append({ id: newId, name: "", availabilities: [], isEditing: true });
+    append({ id: newId, name: "", availabilities: [], notes: "", isEditing: true });
     setExpanded(prev => ({...prev, [newId]: true}));
   };
 
@@ -250,80 +252,99 @@ export function DatePollingForm({ onSubmit }: DatePollingFormProps) {
                   </div>
                   
                   {(isExpanded || participantField.isEditing) && (
-                    <FormField
-                      control={form.control}
-                      name={`participants.${index}.availabilities`}
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Available Dates & Times</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-full justify-start text-left font-normal md:w-[240px]",
-                                    !field.value?.length && "text-muted-foreground"
-                                  )}
-                                  disabled={!participantField.isEditing}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value?.length > 0 ? (
-                                    <span>{field.value.length} date(s) selected</span>
-                                  ) : (
-                                    <span>Pick dates</span>
-                                  )}
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="multiple"
-                                selected={field.value?.map(a => a.date)}
-                                onSelect={(dates) => {
-                                  const newAvailabilities = (dates || []).map(date => {
-                                    const existing = field.value?.find(a => a.date.getTime() === date.getTime());
-                                    return existing || { date, time: "Any Time" };
-                                  });
-                                  field.onChange(newAvailabilities);
-                                }}
-                                initialFocus
-                                disabled={(date) =>
-                                  date < new Date(new Date().setHours(0, 0, 0, 0))
-                                }
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <div className="space-y-2 pt-2 max-h-48 overflow-y-auto pr-2">
-                            {field.value?.slice().sort((a,b) => a.date.getTime() - b.date.getTime()).map((availability) => (
-                                <div key={availability.date.toISOString()} className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50">
-                                  <span className="text-sm font-medium">{format(availability.date, "PPP")}</span>
-                                  <Select
-                                    value={availability.time}
-                                    onValueChange={(time) => {
-                                        const updatedAvailabilities = field.value.map(a => a.date.getTime() === availability.date.getTime() ? { ...a, time: time } : a);
-                                        field.onChange(updatedAvailabilities);
-                                    }}
+                    <>
+                      <FormField
+                        control={form.control}
+                        name={`participants.${index}.availabilities`}
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Available Dates & Times</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    className={cn(
+                                      "w-full justify-start text-left font-normal md:w-[240px]",
+                                      !field.value?.length && "text-muted-foreground"
+                                    )}
                                     disabled={!participantField.isEditing}
                                   >
-                                    <SelectTrigger className="h-8 w-[190px] flex-shrink-0 bg-background">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Any Time">Any Time</SelectItem>
-                                      <SelectItem value="Morning (9am-12pm)">Morning (9am-12pm)</SelectItem>
-                                      <SelectItem value="Afternoon (12pm-5pm)">Afternoon (12pm-5pm)</SelectItem>
-                                      <SelectItem value="Evening (5pm-9pm)">Evening (5pm-9pm)</SelectItem>
-                                      <SelectItem value="Late Night (9pm+)">Late Night (9pm+)</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                            ))}
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {field.value?.length > 0 ? (
+                                      <span>{field.value.length} date(s) selected</span>
+                                    ) : (
+                                      <span>Pick dates</span>
+                                    )}
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="multiple"
+                                  selected={field.value?.map(a => a.date)}
+                                  onSelect={(dates) => {
+                                    const newAvailabilities = (dates || []).map(date => {
+                                      const existing = field.value?.find(a => a.date.getTime() === date.getTime());
+                                      return existing || { date, time: "Any Time" };
+                                    });
+                                    field.onChange(newAvailabilities);
+                                  }}
+                                  initialFocus
+                                  disabled={(date) =>
+                                    date < new Date(new Date().setHours(0, 0, 0, 0))
+                                  }
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <div className="space-y-2 pt-2 max-h-48 overflow-y-auto pr-2">
+                              {field.value?.slice().sort((a,b) => a.date.getTime() - b.date.getTime()).map((availability) => (
+                                  <div key={availability.date.toISOString()} className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50">
+                                    <span className="text-sm font-medium">{format(availability.date, "PPP")}</span>
+                                    <Select
+                                      value={availability.time}
+                                      onValueChange={(time) => {
+                                          const updatedAvailabilities = field.value.map(a => a.date.getTime() === availability.date.getTime() ? { ...a, time: time } : a);
+                                          field.onChange(updatedAvailabilities);
+                                      }}
+                                      disabled={!participantField.isEditing}
+                                    >
+                                      <SelectTrigger className="h-8 w-[190px] flex-shrink-0 bg-background">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Any Time">Any Time</SelectItem>
+                                        <SelectItem value="Morning (9am-12pm)">Morning (9am-12pm)</SelectItem>
+                                        <SelectItem value="Afternoon (12pm-5pm)">Afternoon (12pm-5pm)</SelectItem>
+                                        <SelectItem value="Evening (5pm-9pm)">Evening (5pm-9pm)</SelectItem>
+                                        <SelectItem value="Late Night (9pm+)">Late Night (9pm+)</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`participants.${index}.notes`}
+                        render={({ field }) => (
+                          <FormItem className="pt-4">
+                            <FormLabel>Notes</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="e.g., vegetarian or can't do Mondays"
+                                {...field}
+                                disabled={!participantField.isEditing}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
                   )}
                 </div>
               )})}
