@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { AvailabilityData } from '@/lib/types';
 import type { SuggestRestaurantInput, SuggestRestaurantOutput } from '@/ai/flows/suggest-restaurant';
@@ -15,7 +15,7 @@ import { getRestaurantSuggestion } from './actions';
 import { useToast } from '@/hooks/use-toast';
 
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -187,3 +187,12 @@ export default function Home() {
     </div>
   );
 }
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
