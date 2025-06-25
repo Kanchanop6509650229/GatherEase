@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, RefreshCcw } from 'lucide-react';
 import { getRestaurantSuggestion } from './actions';
 import { useToast } from '@/hooks/use-toast';
+import { useRealtimeRoom } from '@/hooks/use-realtime-room';
 
 
 function HomeContent() {
@@ -23,10 +24,12 @@ function HomeContent() {
   const [availability, setAvailability] = useState<AvailabilityData | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestRestaurantOutput[] | null>(null);
   const [bestDate, setBestDate] = useState<Date | null>(null);
+  const [bestTime, setBestTime] = useState<string | null>(null);
   const [excludedRestaurants, setExcludedRestaurants] = useState<string[]>([]);
   const [searchCriteria, setSearchCriteria] = useState<SuggestRestaurantInput | null>(null);
   const [isSearchingAgain, setIsSearchingAgain] = useState(false);
   const { toast } = useToast();
+  useRealtimeRoom(roomId);
 
   useEffect(() => {
     let id = searchParams.get('room');
@@ -45,8 +48,9 @@ function HomeContent() {
     setSearchCriteria(null);
   };
 
-  const handleBestDateCalculated = (date: Date | null) => {
+  const handleBestDateCalculated = (date: Date | null, time: string | null) => {
     setBestDate(date);
+    setBestTime(time);
   };
 
   const handleSuggestionGenerated = (data: SuggestRestaurantOutput[], input: SuggestRestaurantInput) => {
@@ -101,7 +105,7 @@ function HomeContent() {
     setSearchCriteria(null);
     try {
       if (roomId) {
-        await fetch(`/api/rooms/${roomId}`, { method: 'DELETE' });
+        await fetch(`/api/rooms/${roomId}/participants`, { method: 'DELETE' });
       }
       router.refresh();
     } catch (e) {
@@ -166,7 +170,14 @@ function HomeContent() {
               </div>
               <div className="space-y-4">
                 {suggestions.map((s, index) => (
-                  <RestaurantResultCard key={s.restaurantName} data={s} rank={index + 1} />
+                  <RestaurantResultCard
+                    key={s.restaurantName}
+                    data={s}
+                    rank={index + 1}
+                    roomId={roomId}
+                    bestDate={bestDate}
+                    bestTime={bestTime}
+                  />
                 ))}
               </div>
               <div className="flex justify-center gap-4">
