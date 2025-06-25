@@ -41,7 +41,6 @@ import {
 } from "@/components/ui/select";
 import { CalendarIcon, PlusCircle, Trash2, Check, X, Pencil, ChevronDown } from "lucide-react";
 import type { AvailabilityData } from "@/lib/types";
-import { useParticipants } from "@/hooks/use-participants";
 
 const dateAvailabilitySchema = z.object({
   date: z.date(),
@@ -69,7 +68,6 @@ type DatePollingFormProps = {
 
 export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
-  const { loadParticipants, saveParticipants, clearParticipants } = useParticipants(roomId);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -86,10 +84,15 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
   React.useEffect(() => {
     const load = async () => {
       try {
-        const data = await loadParticipants();
-        if (data && data.length > 0) {
-          const participantsWithDates = data.map((p) => ({
+        const res = await fetch(`/api/rooms/${roomId}`);
+        const data = await res.json();
+        if (data.participants && data.participants.length > 0) {
+          const participantsWithDates = data.participants.map((p: any) => ({
             ...p,
+            availabilities: p.availabilities.map((a: { date: string, time: string }) => ({
+              date: new Date(a.date),
+              time: a.time,
+            })),
             isEditing: false,
           }));
           replace(participantsWithDates);
@@ -99,7 +102,7 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
       }
     };
     load();
-  }, [replace, loadParticipants]);
+  }, [replace, roomId]);
 
   const watchedParticipants = form.watch("participants");
   React.useEffect(() => {
@@ -108,9 +111,13 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
       .map(({ isEditing, ...rest }) => rest);
 
     if (participantsToSave.length > 0) {
-      saveParticipants(participantsToSave);
+      fetch(`/api/rooms/${roomId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participants: participantsToSave }),
+      }).catch(e => console.error('Failed to save participants', e));
     }
-  }, [watchedParticipants, saveParticipants]);
+  }, [watchedParticipants, roomId]);
 
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
     const confirmedParticipants = values.participants
@@ -190,7 +197,7 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
                           </FormControl>
                         )}
                       />
-                      <FormMessage />
+                      <FormMessage {...form.getFieldState(`participants.${index}.name`)} />
                     </FormItem>
                     <div className="flex items-center gap-1 self-start pt-6 sm:ml-auto sm:pt-2">
                       {participantField.isEditing ? (

@@ -11,7 +11,7 @@ same data.
 - **Date Polling** – collect each participant's availability.
 - **Availability Matrix** – visualize responses and pick the best date.
 - **Restaurant Suggestions** – use an AI flow to recommend places based on
-  location, dietary needs, price range and a search radius.
+  location and dietary needs.
 
 The core logic lives in [`src/app/page.tsx`](src/app/page.tsx) and the AI flow
 is defined in [`src/ai/flows/suggest-restaurant.ts`](src/ai/flows/suggest-restaurant.ts).
@@ -58,7 +58,7 @@ running `npm run genkit:dev`.
 ## Using the App with Multiple Devices
 
 GatherEase stores participant responses in a local `db.sqlite` file on the
-server using the bundled `sqlite3` Node.js library. To ensure everyone sees the same information:
+server. To ensure everyone sees the same information:
 
 1. **Run a single server instance.** Start `npm run dev` on one machine and make
    sure other devices access the app via this server's URL.
@@ -66,4 +66,5 @@ server using the bundled `sqlite3` Node.js library. To ensure everyone sees the 
    `?room=ID` query parameter. Share this full link (or use the "Share Your Room"
    button) so others join the exact same room.
 
-No separate SQLite installation is required anymore.
+The server requires the `sqlite3` command line tool. If you encounter errors
+related to SQLite, install `sqlite3` and restart the server.
