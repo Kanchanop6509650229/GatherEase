@@ -136,7 +136,7 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
                 <FormControl>
                   <Input placeholder="e.g., Italian, Sushi" {...field} />
                 </FormControl>
-                <FormDescription>Comma separated list (optional).</FormDescription>
+                <FormDescription>Comma-separated list (optional).</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
