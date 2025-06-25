@@ -148,7 +148,7 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
               name="radius"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Distance (km)</FormLabel>
+                  <FormLabel>Distance (miles)</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., 5" {...field} />
                   </FormControl>
