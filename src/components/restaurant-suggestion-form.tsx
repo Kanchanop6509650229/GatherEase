@@ -32,7 +32,11 @@ const formSchema = z.object({
   location: z.string().min(3, "Please enter a valid city or address."),
   dietaryRestrictions: z.string().optional(),
   cuisine: z.string().optional(),
-  priceRange: z.enum(['$', '$$', '$$$']).optional(),
+  priceRange: z
+    .string()
+    .optional()
+    .transform(val => (val ? val : undefined))
+    .pipe(z.enum(['$', '$$', '$$$']).optional()),
   distanceKm: z
     .string()
     .optional()
