@@ -34,7 +34,7 @@ const TIME_ORDER = [
 
 type AvailabilityMatrixProps = {
   data: AvailabilityData;
-  onBestDateCalculated: (date: Date | null, time: string | null) => void;
+  onBestDateCalculated: (date: Date | null) => void;
   onReset: () => void;
   onGoBack: () => void;
 };
@@ -49,19 +49,14 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
       .map((t) => new Date(t))
       .sort((a, b) => a.getTime() - b.getTime());
 
-    const availabilityMap = new Map<string, Map<number, Set<string>>>();
+    const availabilityMap = new Map<string, Map<number, string>>();
     const attendanceMap = new Map<number, Map<string, number>>();
 
     for (const participant of data) {
-      const dateMap = new Map<number, Set<string>>();
+      const dateMap = new Map<number, string>();
       for (const availability of participant.availabilities) {
         const dayKey = startOfDay(availability.date).getTime();
-        let times = dateMap.get(dayKey);
-        if (!times) {
-          times = new Set<string>();
-          dateMap.set(dayKey, times);
-        }
-        times.add(availability.time);
+        dateMap.set(dayKey, availability.time);
 
         let timeMap = attendanceMap.get(dayKey);
         if (!timeMap) {
@@ -80,7 +75,7 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
           );
         }
       }
-      availabilityMap.set(participant.id, dateMap);
+      availabilityMap.set(participant.name, dateMap);
     }
 
     let bestDate: Date | null = null;
@@ -123,8 +118,8 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
   }, [data]);
 
   useEffect(() => {
-    onBestDateCalculated(bestDateInfo.date, bestDateInfo.time);
-  }, [bestDateInfo.date, bestDateInfo.time, onBestDateCalculated]);
+    onBestDateCalculated(bestDateInfo.date);
+  }, [bestDateInfo.date, onBestDateCalculated]);
 
   return (
     <Card className="w-full max-w-4xl shadow-lg">
@@ -193,7 +188,7 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
             </TableHeader>
             <TableBody>
               {data.map((participant) => (
-                <TableRow key={participant.id}>
+                <TableRow key={participant.name}>
                   <TableCell className="sticky left-0 bg-card z-10 font-semibold">
                     <div className="flex flex-col">
                       <span>{participant.name}</span>
@@ -204,15 +199,15 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
                   </TableCell>
                   {uniqueDates.map((date) => {
                     const key = startOfDay(date).getTime();
-                    const availableTimes = availabilityMap
-                      .get(participant.id)
+                    const availableTime = availabilityMap
+                      .get(participant.name)
                       ?.get(key);
                     const isBestDate =
                       bestDateInfo.date?.getTime() === date.getTime();
                     const isBestDateTime =
                       isBestDate &&
-                      (availableTimes?.has("Any Time") ||
-                        (bestDateInfo.time ? availableTimes?.has(bestDateInfo.time) : false));
+                      (availableTime === "Any Time" ||
+                        availableTime === bestDateInfo.time);
                     return (
                       <TableCell
                         key={date.toISOString()}
@@ -222,15 +217,11 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
                           isBestDateTime && "ring-2 ring-primary"
                         )}
                       >
-                        {availableTimes ? (
+                        {availableTime ? (
                            <div className="flex flex-col items-center justify-center gap-1">
-                             {[...availableTimes].map((t) => (
-                               <CheckCircle2 key={t} className="h-4 w-4 text-green-500" />
-                             ))}
+                             <CheckCircle2 className="h-6 w-6 text-green-500" />
                              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                               {[...availableTimes]
-                                 .map((t) => (t === "Any Time" ? "Any" : t.replace(/\s\(.*\)/, "")))
-                                 .join(", ")}
+                               {availableTime === "Any Time" ? "Any" : availableTime.replace(/\s\(.*\)/, '')}
                              </span>
                            </div>
                         ) : (
