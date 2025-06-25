@@ -31,7 +31,11 @@ import { Loader2, Sparkles } from "lucide-react";
 const formSchema = z.object({
   location: z.string().min(3, "Please enter a valid city or address."),
   dietaryRestrictions: z.string().optional(),
-  priceRange: z.enum(['$', '$$', '$$$']).optional(),
+  priceRange: z
+    .preprocess(
+      val => (val === '' ? undefined : val),
+      z.enum(['$', '$$', '$$$']).optional()
+    ),
   radius: z.string().optional(),
   cuisineTypes: z.string().optional(),
 });
