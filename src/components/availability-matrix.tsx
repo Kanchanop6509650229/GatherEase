@@ -21,7 +21,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Users, ArrowLeft } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  Users,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { format, startOfDay } from "date-fns";
 
 const TIME_ORDER = [
@@ -156,7 +163,9 @@ export function AvailabilityMatrix({
         {selectedBest ? (
           <div className="mb-6 rounded-lg border border-primary bg-primary/10 p-4 text-center">
             <h3 className="font-headline font-semibold text-lg text-primary">
-              {bestOptions.length > 1 ? "Best Times Found!" : "Best Time Found!"}
+              {bestOptions.length > 1
+                ? `${bestOptions.length} Best Times Found!`
+                : "Best Time Found!"}
             </h3>
             <p className="text-muted-foreground">
               {bestOptions.length > 1 ? "Choose the best option for your get-together:" : "The best time for your get-together is"}{" "}
@@ -171,17 +180,33 @@ export function AvailabilityMatrix({
               available.
             </p>
             {bestOptions.length > 1 && (
-              <select
-                className="mt-2 w-full max-w-xs rounded-md border p-2"
-                value={selectedBestIndex}
-                onChange={(e) => setSelectedBestIndex(parseInt(e.target.value))}
-              >
-                {bestOptions.map((opt, idx) => (
-                  <option value={idx} key={`${opt.date.toISOString()}-${opt.time}`}>
-                    {format(opt.date, "EEE, MMM d")} at {opt.time}
-                  </option>
-                ))}
-              </select>
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() =>
+                    setSelectedBestIndex((idx) => Math.max(idx - 1, 0))
+                  }
+                  disabled={selectedBestIndex === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium">
+                  {format(selectedBest.date, "EEE, MMM d")} at {selectedBest.time}
+                </span>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() =>
+                    setSelectedBestIndex((idx) =>
+                      Math.min(idx + 1, bestOptions.length - 1)
+                    )
+                  }
+                  disabled={selectedBestIndex === bestOptions.length - 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             )}
             <Button
               className="mt-2"

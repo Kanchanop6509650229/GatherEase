@@ -161,7 +161,7 @@ function HomeContent() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
-        <a href="/" className="flex items-center gap-4">
+        <a href={`/?room=${roomId}`} className="flex items-center gap-4">
           <Icons.logo className="h-8 w-8 text-primary" />
           <h1 className="font-headline text-2xl font-semibold text-foreground">
             GatherEase
