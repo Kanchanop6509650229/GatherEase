@@ -137,7 +137,7 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
       <CardContent>
         {bestDateInfo.date ? (
           <div className="mb-6 rounded-lg border border-primary bg-primary/10 p-4 text-center">
-             <h3 className="font-headline font-semibold text-lg text-primary-foreground/90">Best Time Found!</h3>
+             <h3 className="font-headline font-semibold text-lg text-primary">Best Time Found!</h3>
             <p className="text-muted-foreground">
               The best time for your get-together is{" "}
               <span className="font-bold text-foreground">{format(bestDateInfo.date, "EEEE, MMMM do")}</span>{" "}
