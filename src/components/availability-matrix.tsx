@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect } from "react";
 import type { AvailabilityData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CheckCircle2, XCircle, Users, ArrowLeft } from "lucide-react";
 import { format, startOfDay } from "date-fns";
 
@@ -48,7 +47,7 @@ export function AvailabilityMatrix({
   onGoBack,
   onSaveCalendar,
 }: AvailabilityMatrixProps) {
-  const { uniqueDates, availabilityMap, bestOptions, rankedOptions, bestDateInfo } =
+  const { uniqueDates, availabilityMap, bestDateInfo, rankedOptions } =
     useMemo(() => {
       const allDates = data.flatMap((p) => p.availabilities.map((a) => a.date));
       const uniqueDateTimes = [
@@ -118,10 +117,6 @@ export function AvailabilityMatrix({
         return TIME_ORDER.indexOf(a.time) - TIME_ORDER.indexOf(b.time);
       });
 
-      const bestOptions = rankedOptions.filter(
-        (opt) => opt.attendance === maxAttendance,
-      );
-
       return {
         uniqueDates,
         availabilityMap,
@@ -130,21 +125,13 @@ export function AvailabilityMatrix({
           time: bestTime,
           attendance: maxAttendance,
         },
-        bestOptions,
         rankedOptions,
       };
     }, [data]);
 
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const selectedOption = bestOptions[selectedIndex] ?? null;
-
   useEffect(() => {
-    if (selectedOption) {
-      onBestDateCalculated(selectedOption.date, selectedOption.time);
-    } else {
-      onBestDateCalculated(null, null);
-    }
-  }, [selectedOption, onBestDateCalculated]);
+    onBestDateCalculated(bestDateInfo.date, bestDateInfo.time);
+  }, [bestDateInfo.date, bestDateInfo.time, onBestDateCalculated]);
 
   return (
     <Card className="w-full max-w-4xl shadow-lg">
@@ -157,50 +144,26 @@ export function AvailabilityMatrix({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {bestOptions.length ? (
+        {bestDateInfo.date ? (
           <div className="mb-6 rounded-lg border border-primary bg-primary/10 p-4 text-center">
             <h3 className="font-headline font-semibold text-lg text-primary">
-              {bestOptions.length > 1 ? "Best Times Found!" : "Best Time Found!"}
+              Best Time Found!
             </h3>
-            {bestOptions.length > 1 ? (
-              <div className="mt-2 flex flex-col items-start justify-center gap-2">
-                <p className="text-muted-foreground">
-                  Multiple times work equally well. Select one to save:
-                </p>
-                <RadioGroup
-                  value={String(selectedIndex)}
-                  onValueChange={(val) => setSelectedIndex(parseInt(val))}
-                >
-                  {bestOptions.map((opt, idx) => (
-                    <label
-                      key={`${opt.date.toISOString()}-${opt.time}`}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <RadioGroupItem value={String(idx)} id={`best-${idx}`} />
-                      <span>
-                        {format(opt.date, "EEEE, MMMM do")} at {opt.time} – {opt.attendance} / {data.length}
-                      </span>
-                    </label>
-                  ))}
-                </RadioGroup>
-              </div>
-            ) : (
-              <p className="text-muted-foreground">
-                The best time for your get-together is{' '}
-                <span className="font-bold text-foreground">
-                  {format(selectedOption!.date, "EEEE, MMMM do")}
-                </span>{' '}
-                at{' '}
-                <span className="font-bold text-foreground">
-                  {selectedOption!.time}
-                </span>
-                , with{' '}
-                <span className="font-bold text-foreground">
-                  {selectedOption!.attendance} out of {data.length} people
-                </span>{' '}
-                available.
-              </p>
-            )}
+            <p className="text-muted-foreground">
+              The best time for your get-together is{" "}
+              <span className="font-bold text-foreground">
+                {format(bestDateInfo.date, "EEEE, MMMM do")}
+              </span>{" "}
+              at{" "}
+              <span className="font-bold text-foreground">
+                {bestDateInfo.time}
+              </span>
+              , with{" "}
+              <span className="font-bold text-foreground">
+                {bestDateInfo.attendance} out of {data.length} people
+              </span>{" "}
+              available.
+            </p>
             <Button className="mt-2" variant="outline" onClick={onSaveCalendar}>
               Save to Calendar
             </Button>
@@ -216,20 +179,18 @@ export function AvailabilityMatrix({
             </p>
           </div>
         )}
-        {bestOptions.length && rankedOptions.length > bestOptions.length && (
+        {bestDateInfo.date && rankedOptions.length > 1 && (
           <div className="mb-6 rounded-lg border bg-muted/20 p-4">
             <h4 className="font-headline font-semibold text-lg">
               Next Best Options
             </h4>
             <ol className="mt-2 list-decimal list-inside space-y-1 text-muted-foreground">
-              {rankedOptions
-                .slice(bestOptions.length, bestOptions.length + 3)
-                .map((opt) => (
-                  <li key={`${opt.date.toISOString()}-${opt.time}`}>
-                    {format(opt.date, "EEEE, MMMM do")} at {opt.time} –{' '}
-                    {opt.attendance} / {data.length}
-                  </li>
-                ))}
+              {rankedOptions.slice(1, 4).map((opt) => (
+                <li key={`${opt.date.toISOString()}-${opt.time}`}>
+                  {format(opt.date, "EEEE, MMMM do")} at {opt.time} –{" "}
+                  {opt.attendance} / {data.length}
+                </li>
+              ))}
             </ol>
           </div>
         )}
@@ -243,7 +204,7 @@ export function AvailabilityMatrix({
                 </TableHead>
                 {uniqueDates.map((date) => {
                   const isBestDate =
-                    selectedOption?.date.getTime() === date.getTime();
+                    bestDateInfo.date?.getTime() === date.getTime();
                   return (
                     <TableHead
                       key={date.toISOString()}
@@ -261,7 +222,7 @@ export function AvailabilityMatrix({
                           variant="default"
                           className="mt-1 bg-accent text-accent-foreground"
                         >
-                          Best {selectedOption?.time.replace(/\s\(.*\)/, "")}
+                          Best {bestDateInfo.time?.replace(/\s\(.*\)/, "")}
                         </Badge>
                       )}
                     </TableHead>
@@ -288,13 +249,13 @@ export function AvailabilityMatrix({
                       .get(participant.name)
                       ?.get(key);
                     const isBestDate =
-                      selectedOption?.date.getTime() === date.getTime();
+                      bestDateInfo.date?.getTime() === date.getTime();
                     const isBestDateTime =
                       isBestDate &&
                       availableTimes &&
                       (availableTimes.has("Any Time") ||
-                        (selectedOption?.time
-                          ? availableTimes.has(selectedOption.time)
+                        (bestDateInfo.time
+                          ? availableTimes.has(bestDateInfo.time)
                           : false));
                     return (
                       <TableCell
