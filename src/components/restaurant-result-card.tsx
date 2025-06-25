@@ -7,11 +7,23 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Button } from "./ui/button";
-import { MapPin, Star, Utensils, ExternalLink, Users } from "lucide-react";
+import { MapPin, Star, Utensils, ExternalLink, Users, Calendar } from "lucide-react";
+import { createEvent } from "ics";
 
 type RestaurantResultCardProps = {
   data: SuggestRestaurantOutput;
   rank: number;
+  roomId: string;
+  bestDate: Date | null;
+  bestTime: string | null;
+};
+
+const TIME_START: Record<string, number> = {
+  "Any Time": 12,
+  "Morning (9am-12pm)": 9,
+  "Afternoon (12pm-5pm)": 12,
+  "Evening (5pm-9pm)": 17,
+  "Late Night (9pm+)": 21,
 };
 
 const StarRating = ({ rating, reviewCount }: { rating: number, reviewCount: number }) => {
@@ -42,7 +54,35 @@ const StarRating = ({ rating, reviewCount }: { rating: number, reviewCount: numb
 };
 
 
-export function RestaurantResultCard({ data, rank }: RestaurantResultCardProps) {
+export function RestaurantResultCard({ data, rank, roomId, bestDate, bestTime }: RestaurantResultCardProps) {
+  const handleSave = () => {
+    if (!bestDate || !bestTime) return;
+    const start: [number, number, number, number, number] = [
+      bestDate.getFullYear(),
+      bestDate.getMonth() + 1,
+      bestDate.getDate(),
+      TIME_START[bestTime],
+      0,
+    ];
+    createEvent(
+      {
+        start,
+        duration: { hours: 2 },
+        title: `Dinner @ ${data.restaurantName}`,
+        location: data.address,
+      },
+      (err, value) => {
+        if (err || !value) return;
+        const blob = new Blob([value], { type: 'text/calendar' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gatherease-${roomId}.ics`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    );
+  };
   return (
     <Card className="w-full max-w-4xl overflow-hidden shadow-md transition-shadow hover:shadow-lg">
       <div className="flex flex-col sm:flex-row">
@@ -67,12 +107,17 @@ export function RestaurantResultCard({ data, rank }: RestaurantResultCardProps) 
               <span>{data.address}</span>
             </div>
           </CardContent>
-          <CardFooter className="flex justify-end bg-muted/50 p-4">
+          <CardFooter className="flex flex-wrap justify-end gap-2 bg-muted/50 p-4">
             <Button asChild variant="default" className="bg-primary text-primary-foreground">
               <a href={data.googleMapsUrl} target="_blank" rel="noopener noreferrer">
                 View on Google Maps <ExternalLink className="ml-2 h-4 w-4"/>
               </a>
             </Button>
+            {bestDate && bestTime && (
+              <Button type="button" variant="outline" onClick={handleSave}>
+                <Calendar className="mr-2 h-4 w-4" /> Save to Calendar
+              </Button>
+            )}
           </CardFooter>
         </div>
       </div>

@@ -31,6 +31,13 @@ import { Loader2, Sparkles } from "lucide-react";
 const formSchema = z.object({
   location: z.string().min(3, "Please enter a valid city or address."),
   dietaryRestrictions: z.string().optional(),
+  cuisine: z.string().optional(),
+  priceRange: z.enum(['$', '$$', '$$$']).optional(),
+  distanceKm: z
+    .string()
+    .optional()
+    .transform(val => (val ? parseInt(val, 10) : undefined))
+    .pipe(z.number().min(1).max(30).optional()),
 });
 
 type RestaurantSuggestionFormProps = {
@@ -45,12 +52,22 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
     defaultValues: {
       location: "",
       dietaryRestrictions: "",
+      cuisine: "",
+      priceRange: undefined,
+      distanceKm: undefined,
     },
   });
 
   const handleFormSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
-    const result = await getRestaurantSuggestion(values);
+    const input: SuggestRestaurantInput = {
+      ...values,
+      dietaryRestrictions: values.dietaryRestrictions || '',
+      cuisine: values.cuisine
+        ? values.cuisine.split(',').map(c => c.trim()).filter(Boolean)
+        : undefined,
+    };
+    const result = await getRestaurantSuggestion(input);
     setIsLoading(false);
 
     if ("error" in result) {
@@ -60,7 +77,7 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
         description: result.error,
       });
     } else {
-      onSuggestion(result, values);
+      onSuggestion(result, input);
     }
   };
 
@@ -91,26 +108,76 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="dietaryRestrictions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dietary Needs</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., vegetarian, gluten-free"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Any allergies or preferences? (optional)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
+          <FormField
+            control={form.control}
+            name="dietaryRestrictions"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Dietary Needs</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="e.g., vegetarian, gluten-free"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Any allergies or preferences? (optional)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="cuisine"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cuisine</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Italian, Sushi" {...field} />
+                </FormControl>
+                <FormDescription>Comma-separated list (optional).</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="priceRange"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Price Range</FormLabel>
+                <FormControl>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    {...field}
+                  >
+                    <option value="">Any</option>
+                    <option value="$">$</option>
+                    <option value="$$">$$</option>
+                    <option value="$$$">$$$</option>
+                  </select>
+                </FormControl>
+                <FormDescription>Optional budget preference.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="distanceKm"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Radius (km)</FormLabel>
+                <FormControl>
+                  <Input type="number" min="1" max="30" placeholder="5" {...field} />
+                </FormControl>
+                <FormDescription>Search distance from the location.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </CardContent>
           <CardFooter className="flex justify-end">
             <Button type="submit" size="lg" disabled={isLoading} className="bg-accent text-accent-foreground hover:bg-accent/90">
               {isLoading ? (
