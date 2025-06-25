@@ -112,9 +112,9 @@ function HomeContent() {
     }
   };
 
-  const handleSaveCalendar = () => {
-    if (!bestDate) return;
-    const start = new Date(bestDate);
+  const handleSaveCalendar = (date: Date, time: string) => {
+    if (!date) return;
+    const start = new Date(date);
     const timeMap: Record<string, number> = {
       "Morning (9am-12pm)": 9,
       "Afternoon (12pm-5pm)": 12,
@@ -122,7 +122,7 @@ function HomeContent() {
       "Late Night (9pm+)": 21,
       "Any Time": 12,
     };
-    const hour = bestTime ? (timeMap[bestTime] ?? 12) : 12;
+    const hour = time ? timeMap[time] ?? 12 : 12;
     start.setHours(hour, 0, 0, 0);
     const ics = generateEventICS("GatherEase Event", start, 2);
     const blob = new Blob([ics], { type: "text/calendar" });
