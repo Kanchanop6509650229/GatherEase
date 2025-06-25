@@ -34,7 +34,7 @@ const TIME_ORDER = [
 
 type AvailabilityMatrixProps = {
   data: AvailabilityData;
-  onBestDateCalculated: (date: Date | null) => void;
+  onBestDateCalculated: (date: Date | null, time: string | null) => void;
   onReset: () => void;
   onGoBack: () => void;
 };
@@ -49,31 +49,30 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
       .map((t) => new Date(t))
       .sort((a, b) => a.getTime() - b.getTime());
 
-    const availabilityMap = new Map<string, Map<number, string>>();
+    const availabilityMap = new Map<string, Map<number, Set<string>>>();
     const attendanceMap = new Map<number, Map<string, number>>();
 
     for (const participant of data) {
-      const dateMap = new Map<number, string>();
+      const dateMap = new Map<number, Set<string>>();
       for (const availability of participant.availabilities) {
         const dayKey = startOfDay(availability.date).getTime();
-        dateMap.set(dayKey, availability.time);
-
-        let timeMap = attendanceMap.get(dayKey);
-        if (!timeMap) {
-          timeMap = new Map<string, number>();
-          attendanceMap.set(dayKey, timeMap);
-        }
-
-        if (availability.time === "Any Time") {
-          for (const slot of TIME_ORDER) {
-            timeMap.set(slot, (timeMap.get(slot) || 0) + 1);
+        const set = dateMap.get(dayKey) ?? new Set<string>();
+        for (const time of availability.times) {
+          set.add(time);
+          let timeMap = attendanceMap.get(dayKey);
+          if (!timeMap) {
+            timeMap = new Map<string, number>();
+            attendanceMap.set(dayKey, timeMap);
           }
-        } else {
-          timeMap.set(
-            availability.time,
-            (timeMap.get(availability.time) || 0) + 1
-          );
+          if (time === "Any Time") {
+            for (const slot of TIME_ORDER) {
+              timeMap.set(slot, (timeMap.get(slot) || 0) + 1);
+            }
+          } else {
+            timeMap.set(time, (timeMap.get(time) || 0) + 1);
+          }
         }
+        dateMap.set(dayKey, set);
       }
       availabilityMap.set(participant.name, dateMap);
     }
@@ -118,8 +117,8 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
   }, [data]);
 
   useEffect(() => {
-    onBestDateCalculated(bestDateInfo.date);
-  }, [bestDateInfo.date, onBestDateCalculated]);
+    onBestDateCalculated(bestDateInfo.date, bestDateInfo.time);
+  }, [bestDateInfo.date, bestDateInfo.time, onBestDateCalculated]);
 
   return (
     <Card className="w-full max-w-4xl shadow-lg">
@@ -199,15 +198,18 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
                   </TableCell>
                   {uniqueDates.map((date) => {
                     const key = startOfDay(date).getTime();
-                    const availableTime = availabilityMap
+                    const availableTimes = availabilityMap
                       .get(participant.name)
                       ?.get(key);
                     const isBestDate =
                       bestDateInfo.date?.getTime() === date.getTime();
                     const isBestDateTime =
                       isBestDate &&
-                      (availableTime === "Any Time" ||
-                        availableTime === bestDateInfo.time);
+                      availableTimes &&
+                      (availableTimes.has("Any Time") ||
+                        (bestDateInfo.time
+                          ? availableTimes.has(bestDateInfo.time)
+                          : false));
                     return (
                       <TableCell
                         key={date.toISOString()}
@@ -217,11 +219,15 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
                           isBestDateTime && "ring-2 ring-primary"
                         )}
                       >
-                        {availableTime ? (
+                        {availableTimes ? (
                            <div className="flex flex-col items-center justify-center gap-1">
                              <CheckCircle2 className="h-6 w-6 text-green-500" />
                              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                               {availableTime === "Any Time" ? "Any" : availableTime.replace(/\s\(.*\)/, '')}
+                               {availableTimes.has("Any Time")
+                                 ? "Any"
+                                 : Array.from(availableTimes)
+                                     .map(t => t.replace(/\s\(.*\)/, ''))
+                                     .join(', ')}
                              </span>
                            </div>
                         ) : (

@@ -31,6 +31,9 @@ import { Loader2, Sparkles } from "lucide-react";
 const formSchema = z.object({
   location: z.string().min(3, "Please enter a valid city or address."),
   dietaryRestrictions: z.string().optional(),
+  priceRange: z.enum(['$', '$$', '$$$']).optional(),
+  radius: z.string().optional(),
+  cuisineTypes: z.string().optional(),
 });
 
 type RestaurantSuggestionFormProps = {
@@ -45,12 +48,19 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
     defaultValues: {
       location: "",
       dietaryRestrictions: "",
+      priceRange: undefined,
+      radius: "",
+      cuisineTypes: "",
     },
   });
 
   const handleFormSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
-    const result = await getRestaurantSuggestion(values);
+    const parsed = {
+      ...values,
+      radius: values.radius ? parseInt(values.radius) : undefined,
+    };
+    const result = await getRestaurantSuggestion(parsed);
     setIsLoading(false);
 
     if ("error" in result) {
@@ -60,7 +70,7 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
         description: result.error,
       });
     } else {
-      onSuggestion(result, values);
+      onSuggestion(result, parsed);
     }
   };
 
@@ -106,6 +116,53 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
                   <FormDescription>
                     Any allergies or preferences? (optional)
                   </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="priceRange"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price Range</FormLabel>
+                  <FormControl>
+                    <select {...field} className="w-full border rounded-md p-2">
+                      <option value="">Any</option>
+                      <option value="$">$</option>
+                      <option value="$$">$$</option>
+                      <option value="$$$">$$$</option>
+                    </select>
+                  </FormControl>
+                  <FormDescription>Optional</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="radius"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Distance (miles)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., 5" {...field} />
+                  </FormControl>
+                  <FormDescription>Optional search radius</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="cuisineTypes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cuisine Preferences</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Italian, Sushi" {...field} />
+                  </FormControl>
+                  <FormDescription>Optional</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

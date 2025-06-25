@@ -1,6 +1,7 @@
 export type DateAvailability = {
   date: Date;
-  time: string;
+  /** One or more time slots the participant is available on this date */
+  times: string[];
 };
 
 export type ParticipantAvailability = {
