@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, RefreshCcw } from 'lucide-react';
 import { getRestaurantSuggestion } from './actions';
 import { useToast } from '@/hooks/use-toast';
+import { generateEventICS } from '@/lib/ics';
 
 
 function HomeContent() {
@@ -23,6 +24,7 @@ function HomeContent() {
   const [availability, setAvailability] = useState<AvailabilityData | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestRestaurantOutput[] | null>(null);
   const [bestDate, setBestDate] = useState<Date | null>(null);
+  const [bestTime, setBestTime] = useState<string | null>(null);
   const [excludedRestaurants, setExcludedRestaurants] = useState<string[]>([]);
   const [searchCriteria, setSearchCriteria] = useState<SuggestRestaurantInput | null>(null);
   const [isSearchingAgain, setIsSearchingAgain] = useState(false);
@@ -45,8 +47,9 @@ function HomeContent() {
     setSearchCriteria(null);
   };
 
-  const handleBestDateCalculated = (date: Date | null) => {
+  const handleBestDateCalculated = (date: Date | null, time: string | null) => {
     setBestDate(date);
+    setBestTime(time);
   };
 
   const handleSuggestionGenerated = (data: SuggestRestaurantOutput[], input: SuggestRestaurantInput) => {
@@ -91,6 +94,33 @@ function HomeContent() {
         description: "Unable to copy link.",
       });
     }
+  };
+
+  const handleSaveCalendar = () => {
+    if (!bestDate || !suggestions?.[0]) return;
+    const start = new Date(bestDate);
+    const timeMap: Record<string, number> = {
+      'Morning (9am-12pm)': 9,
+      'Afternoon (12pm-5pm)': 12,
+      'Evening (5pm-9pm)': 17,
+      'Late Night (9pm+)': 21,
+      'Any Time': 12,
+    };
+    const hour = bestTime ? timeMap[bestTime] ?? 12 : 12;
+    start.setHours(hour, 0, 0, 0);
+    const ics = generateEventICS(
+      `Meet at ${suggestions[0].restaurantName}`,
+      start,
+      2,
+      suggestions[0].address
+    );
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'gatherease.ics';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleReset = async () => {
@@ -177,6 +207,9 @@ function HomeContent() {
                     <RefreshCcw className="mr-2 h-4 w-4" />
                   )}
                   Find New Suggestions
+                </Button>
+                <Button variant="outline" onClick={handleSaveCalendar}>
+                  Save to Calendar
                 </Button>
                 <Button variant="outline" onClick={handleCopyLink}>
                   Share Link
