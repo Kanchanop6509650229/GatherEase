@@ -47,7 +47,7 @@ export function AvailabilityMatrix({
   onGoBack,
   onSaveCalendar,
 }: AvailabilityMatrixProps) {
-  const { uniqueDates, availabilityMap, bestDateInfo, rankedOptions } =
+  const { uniqueDates, availabilityMap, bestDateInfo, bestOptions, rankedOptions } =
     useMemo(() => {
       const allDates = data.flatMap((p) => p.availabilities.map((a) => a.date));
       const uniqueDateTimes = [
@@ -117,6 +117,10 @@ export function AvailabilityMatrix({
         return TIME_ORDER.indexOf(a.time) - TIME_ORDER.indexOf(b.time);
       });
 
+      const bestOptions = rankedOptions.filter(
+        (opt) => opt.attendance === maxAttendance,
+      );
+
       return {
         uniqueDates,
         availabilityMap,
@@ -125,6 +129,7 @@ export function AvailabilityMatrix({
           time: bestTime,
           attendance: maxAttendance,
         },
+        bestOptions,
         rankedOptions,
       };
     }, [data]);
@@ -147,23 +152,33 @@ export function AvailabilityMatrix({
         {bestDateInfo.date ? (
           <div className="mb-6 rounded-lg border border-primary bg-primary/10 p-4 text-center">
             <h3 className="font-headline font-semibold text-lg text-primary">
-              Best Time Found!
+              {bestOptions.length > 1 ? 'Best Times Found!' : 'Best Time Found!'}
             </h3>
-            <p className="text-muted-foreground">
-              The best time for your get-together is{" "}
-              <span className="font-bold text-foreground">
-                {format(bestDateInfo.date, "EEEE, MMMM do")}
-              </span>{" "}
-              at{" "}
-              <span className="font-bold text-foreground">
-                {bestDateInfo.time}
-              </span>
-              , with{" "}
-              <span className="font-bold text-foreground">
-                {bestDateInfo.attendance} out of {data.length} people
-              </span>{" "}
-              available.
-            </p>
+            {bestOptions.length > 1 ? (
+              <div className="text-muted-foreground">
+                <p>We've found multiple times that work equally well:</p>
+                <ol className="mt-2 list-decimal list-inside space-y-1">
+                  {bestOptions.map(opt => (
+                    <li key={`${opt.date.toISOString()}-${opt.time}`}>
+                      {format(opt.date, 'EEEE, MMMM do')} at {opt.time} – {opt.attendance} / {data.length}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                The best time for your get-together is{' '}
+                <span className="font-bold text-foreground">
+                  {format(bestDateInfo.date, 'EEEE, MMMM do')}
+                </span>{' '}
+                at{' '}
+                <span className="font-bold text-foreground">{bestDateInfo.time}</span>, with{' '}
+                <span className="font-bold text-foreground">
+                  {bestDateInfo.attendance} out of {data.length} people
+                </span>{' '}
+                available.
+              </p>
+            )}
             <Button className="mt-2" variant="outline" onClick={onSaveCalendar}>
               Save to Calendar
             </Button>
@@ -179,13 +194,13 @@ export function AvailabilityMatrix({
             </p>
           </div>
         )}
-        {bestDateInfo.date && rankedOptions.length > 1 && (
+        {bestDateInfo.date && rankedOptions.length > bestOptions.length && (
           <div className="mb-6 rounded-lg border bg-muted/20 p-4">
             <h4 className="font-headline font-semibold text-lg">
               Next Best Options
             </h4>
             <ol className="mt-2 list-decimal list-inside space-y-1 text-muted-foreground">
-              {rankedOptions.slice(1, 4).map((opt) => (
+              {rankedOptions.slice(bestOptions.length, bestOptions.length + 3).map((opt) => (
                 <li key={`${opt.date.toISOString()}-${opt.time}`}>
                   {format(opt.date, "EEEE, MMMM do")} at {opt.time} –{" "}
                   {opt.attendance} / {data.length}
