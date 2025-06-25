@@ -178,6 +178,9 @@ function HomeContent() {
                   )}
                   Find New Suggestions
                 </Button>
+                <Button variant="outline" onClick={handleCopyLink}>
+                  Share Link
+                </Button>
               </div>
             </div>
           )}

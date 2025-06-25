@@ -2,7 +2,7 @@
 
 import { useMemo, useEffect } from "react";
 import type { AvailabilityData } from "@/lib/types";
-import { cn, downloadCalendarEvent } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -131,7 +131,7 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
       </CardHeader>
       <CardContent>
         {bestDateInfo.date ? (
-          <div className="mb-6 rounded-lg border border-primary bg-primary/10 p-4 text-center space-y-2">
+          <div className="mb-6 rounded-lg border border-primary bg-primary/10 p-4 text-center">
              <h3 className="font-headline font-semibold text-lg text-primary">Best Time Found!</h3>
             <p className="text-muted-foreground">
               The best time for your get-together is{" "}
@@ -140,9 +140,6 @@ export function AvailabilityMatrix({ data, onBestDateCalculated, onReset, onGoBa
               <span className="font-bold text-foreground">{bestDateInfo.time}</span>, with{" "}
               <span className="font-bold text-foreground">{bestDateInfo.attendance} out of {data.length} people</span> available.
             </p>
-            <Button variant="outline" onClick={() => downloadCalendarEvent(bestDateInfo.date!, bestDateInfo.time!)}>
-              Save to Calendar
-            </Button>
           </div>
         ) : (
           <div className="mb-6 rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
