@@ -10,14 +10,17 @@ export default function handler(req: NextApiRequest, res: any) {
     const io = new Server(res.socket.server, { path: '/api/socket/io' });
     res.socket.server.io = io;
     io.on('connection', socket => {
-      socket.on('availability:update', data => {
-        socket.broadcast.emit('availability:update', data);
+      socket.on('join', roomId => {
+        socket.join(roomId);
       });
-      socket.on('restaurant:vote', data => {
-        socket.broadcast.emit('restaurant:vote', data);
+      socket.on('availability:update', ({ roomId, data }) => {
+        socket.to(roomId).broadcast.emit('availability:update', data);
       });
-      socket.on('room:state', data => {
-        socket.broadcast.emit('room:state', data);
+      socket.on('restaurant:vote', ({ roomId, data }) => {
+        socket.to(roomId).broadcast.emit('restaurant:vote', data);
+      });
+      socket.on('room:state', ({ roomId, data }) => {
+        socket.to(roomId).broadcast.emit('room:state', data);
       });
     });
   }
