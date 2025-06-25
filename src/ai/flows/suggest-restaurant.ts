@@ -18,7 +18,7 @@ const SuggestRestaurantInputSchema = z.object({
     .describe('Dietary restrictions for the group (e.g., vegetarian, vegan, gluten-free).'),
   location: z.string().describe('The location of the group (e.g., city, address).'),
   priceRange: z.enum(['$', '$$', '$$$']).optional().describe('Preferred price range'),
-  radius: z.number().int().optional().describe('Search radius in km'),
+  radius: z.number().int().optional().describe('Search radius in miles'),
   cuisineTypes: z.string().optional().describe('Preferred cuisines or keywords'),
   excludedRestaurants: z.array(z.string()).optional().describe('A list of restaurant names to exclude from the suggestions.'),
 });
@@ -67,7 +67,7 @@ Location: {{{location}}}
 Price Range: {{{priceRange}}}
 {{/if}}
 {{#if radius}}
-Within {{{radius}}} km
+Within {{{radius}}} miles
 {{/if}}
 {{#if cuisineTypes}}
 Preferred Cuisines: {{{cuisineTypes}}}
