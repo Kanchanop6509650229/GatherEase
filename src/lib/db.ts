@@ -39,7 +39,7 @@ export function getParticipants(id: string): AvailabilityData | null {
     participants.forEach((p: any) => {
       p.availabilities = p.availabilities.map((a: any) => ({
         date: new Date(a.date),
-        time: a.time,
+        times: Array.isArray(a.times) ? a.times : [a.time].filter(Boolean),
       }));
     });
     return participants;

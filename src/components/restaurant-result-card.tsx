@@ -66,6 +66,15 @@ export function RestaurantResultCard({ data, rank }: RestaurantResultCardProps) 
               <MapPin className="mt-1 h-5 w-5 flex-shrink-0 text-accent" />
               <span>{data.address}</span>
             </div>
+            <div className="mt-2">
+              <iframe
+                title="map"
+                className="w-full h-40 rounded-md"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                  data.address
+                )}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+              />
+            </div>
           </CardContent>
           <CardFooter className="flex justify-end bg-muted/50 p-4">
             <Button asChild variant="default" className="bg-primary text-primary-foreground">

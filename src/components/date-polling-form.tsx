@@ -32,19 +32,22 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { CalendarIcon, PlusCircle, Trash2, Check, X, Pencil, ChevronDown } from "lucide-react";
 import type { AvailabilityData } from "@/lib/types";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const TIME_OPTIONS = [
+  "Any Time",
+  "Morning (9am-12pm)",
+  "Afternoon (12pm-5pm)",
+  "Evening (5pm-9pm)",
+  "Late Night (9pm+)",
+];
 
 const dateAvailabilitySchema = z.object({
   date: z.date(),
-  time: z.string(),
+  times: z.array(z.string()).min(1),
 });
 
 const participantSchema = z.object({
@@ -89,9 +92,9 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
         if (data.participants && data.participants.length > 0) {
           const participantsWithDates = data.participants.map((p: any) => ({
             ...p,
-            availabilities: p.availabilities.map((a: { date: string, time: string }) => ({
+            availabilities: p.availabilities.map((a: { date: string; times?: string[]; time?: string }) => ({
               date: new Date(a.date),
-              time: a.time,
+              times: Array.isArray(a.times) ? a.times : [a.time].filter(Boolean),
             })),
             isEditing: false,
           }));
@@ -197,7 +200,7 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
                           </FormControl>
                         )}
                       />
-                      <FormMessage {...form.getFieldState(`participants.${index}.name`)} />
+                      <FormMessage />
                     </FormItem>
                     <div className="flex items-center gap-1 self-start pt-6 sm:ml-auto sm:pt-2">
                       {participantField.isEditing ? (
@@ -285,7 +288,7 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
                                   onSelect={(dates) => {
                                     const newAvailabilities = (dates || []).map(date => {
                                       const existing = field.value?.find(a => a.date.getTime() === date.getTime());
-                                      return existing || { date, time: "Any Time" };
+                                      return existing || { date, times: ["Any Time"] };
                                     });
                                     field.onChange(newAvailabilities);
                                   }}
@@ -300,25 +303,36 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
                               {field.value?.slice().sort((a,b) => a.date.getTime() - b.date.getTime()).map((availability) => (
                                   <div key={availability.date.toISOString()} className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50">
                                     <span className="text-sm font-medium">{format(availability.date, "PPP")}</span>
-                                    <Select
-                                      value={availability.time}
-                                      onValueChange={(time) => {
-                                          const updatedAvailabilities = field.value.map(a => a.date.getTime() === availability.date.getTime() ? { ...a, time: time } : a);
-                                          field.onChange(updatedAvailabilities);
-                                      }}
-                                      disabled={!participantField.isEditing}
-                                    >
-                                      <SelectTrigger className="h-8 w-[190px] flex-shrink-0 bg-background">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="Any Time">Any Time</SelectItem>
-                                        <SelectItem value="Morning (9am-12pm)">Morning (9am-12pm)</SelectItem>
-                                        <SelectItem value="Afternoon (12pm-5pm)">Afternoon (12pm-5pm)</SelectItem>
-                                        <SelectItem value="Evening (5pm-9pm)">Evening (5pm-9pm)</SelectItem>
-                                        <SelectItem value="Late Night (9pm+)">Late Night (9pm+)</SelectItem>
-                                      </SelectContent>
-                                    </Select>
+                                    <div className="grid gap-1">
+                                      {TIME_OPTIONS.map(option => (
+                                        <label key={option} className="flex items-center gap-2 text-sm">
+                                          <Checkbox
+                                            checked={availability.times.includes(option)}
+                                            onCheckedChange={(checked) => {
+                                              const updatedAvailabilities = field.value.map(a => {
+                                                if (a.date.getTime() !== availability.date.getTime()) return a;
+                                                let times = a.times;
+                                                if (checked) {
+                                                  if (option === 'Any Time') {
+                                                    times = ['Any Time'];
+                                                  } else {
+                                                    times = a.times.filter(t => t !== 'Any Time');
+                                                    if (!times.includes(option)) times.push(option);
+                                                  }
+                                                } else {
+                                                  times = a.times.filter(t => t !== option);
+                                                  if (times.length === 0) times = ['Any Time'];
+                                                }
+                                                return { ...a, times };
+                                              });
+                                              field.onChange(updatedAvailabilities);
+                                            }}
+                                            disabled={!participantField.isEditing}
+                                          />
+                                          {option}
+                                        </label>
+                                      ))}
+                                    </div>
                                   </div>
                               ))}
                             </div>
