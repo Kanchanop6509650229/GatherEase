@@ -1,37 +1,44 @@
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import type { AvailabilityData } from '@/lib/types';
-import type { SuggestRestaurantInput, SuggestRestaurantOutput } from '@/ai/flows/suggest-restaurant';
-import { DatePollingForm } from '@/components/date-polling-form';
-import { AvailabilityMatrix } from '@/components/availability-matrix';
-import { RestaurantSuggestionForm } from '@/components/restaurant-suggestion-form';
-import { RestaurantResultCard } from '@/components/restaurant-result-card';
-import { Icons } from '@/components/icons';
-import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCcw } from 'lucide-react';
-import { getRestaurantSuggestion } from './actions';
-import { useToast } from '@/hooks/use-toast';
-import { generateEventICS } from '@/lib/ics';
-
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import type { AvailabilityData } from "@/lib/types";
+import type {
+  SuggestRestaurantInput,
+  SuggestRestaurantOutput,
+} from "@/ai/flows/suggest-restaurant";
+import { DatePollingForm } from "@/components/date-polling-form";
+import { AvailabilityMatrix } from "@/components/availability-matrix";
+import { RestaurantSuggestionForm } from "@/components/restaurant-suggestion-form";
+import { RestaurantResultCard } from "@/components/restaurant-result-card";
+import { Icons } from "@/components/icons";
+import { Button } from "@/components/ui/button";
+import { Loader2, RefreshCcw } from "lucide-react";
+import { getRestaurantSuggestion } from "./actions";
+import { useToast } from "@/hooks/use-toast";
+import { generateEventICS } from "@/lib/ics";
 
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [roomId, setRoomId] = useState('');
-  const [availability, setAvailability] = useState<AvailabilityData | null>(null);
-  const [suggestions, setSuggestions] = useState<SuggestRestaurantOutput[] | null>(null);
+  const [roomId, setRoomId] = useState("");
+  const [availability, setAvailability] = useState<AvailabilityData | null>(
+    null,
+  );
+  const [suggestions, setSuggestions] = useState<
+    SuggestRestaurantOutput[] | null
+  >(null);
   const [bestDate, setBestDate] = useState<Date | null>(null);
   const [bestTime, setBestTime] = useState<string | null>(null);
   const [excludedRestaurants, setExcludedRestaurants] = useState<string[]>([]);
-  const [searchCriteria, setSearchCriteria] = useState<SuggestRestaurantInput | null>(null);
+  const [searchCriteria, setSearchCriteria] =
+    useState<SuggestRestaurantInput | null>(null);
   const [isSearchingAgain, setIsSearchingAgain] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    let id = searchParams.get('room');
+    let id = searchParams.get("room");
     if (!id) {
       id = crypto.randomUUID();
       router.replace(`?room=${id}`);
@@ -52,10 +59,16 @@ function HomeContent() {
     setBestTime(time);
   };
 
-  const handleSuggestionGenerated = (data: SuggestRestaurantOutput[], input: SuggestRestaurantInput) => {
+  const handleSuggestionGenerated = (
+    data: SuggestRestaurantOutput[],
+    input: SuggestRestaurantInput,
+  ) => {
     setSuggestions(data);
     setSearchCriteria(input);
-    setExcludedRestaurants(prev => [...prev, ...data.map(s => s.restaurantName)]);
+    setExcludedRestaurants((prev) => [
+      ...prev,
+      ...data.map((s) => s.restaurantName),
+    ]);
   };
 
   const handleSearchAgain = async () => {
@@ -68,7 +81,7 @@ function HomeContent() {
     });
     setIsSearchingAgain(false);
 
-    if ('error' in result) {
+    if ("error" in result) {
       toast({
         variant: "destructive",
         title: "Couldn't find more restaurants.",
@@ -76,7 +89,10 @@ function HomeContent() {
       });
     } else {
       setSuggestions(result);
-      setExcludedRestaurants(prev => [...prev, ...result.map(s => s.restaurantName)]);
+      setExcludedRestaurants((prev) => [
+        ...prev,
+        ...result.map((s) => s.restaurantName),
+      ]);
     }
   };
 
@@ -97,28 +113,23 @@ function HomeContent() {
   };
 
   const handleSaveCalendar = () => {
-    if (!bestDate || !suggestions?.[0]) return;
+    if (!bestDate) return;
     const start = new Date(bestDate);
     const timeMap: Record<string, number> = {
-      'Morning (9am-12pm)': 9,
-      'Afternoon (12pm-5pm)': 12,
-      'Evening (5pm-9pm)': 17,
-      'Late Night (9pm+)': 21,
-      'Any Time': 12,
+      "Morning (9am-12pm)": 9,
+      "Afternoon (12pm-5pm)": 12,
+      "Evening (5pm-9pm)": 17,
+      "Late Night (9pm+)": 21,
+      "Any Time": 12,
     };
-    const hour = bestTime ? timeMap[bestTime] ?? 12 : 12;
+    const hour = bestTime ? (timeMap[bestTime] ?? 12) : 12;
     start.setHours(hour, 0, 0, 0);
-    const ics = generateEventICS(
-      `Meet at ${suggestions[0].restaurantName}`,
-      start,
-      2,
-      suggestions[0].address
-    );
-    const blob = new Blob([ics], { type: 'text/calendar' });
+    const ics = generateEventICS("GatherEase Event", start, 2);
+    const blob = new Blob([ics], { type: "text/calendar" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'gatherease.ics';
+    a.download = "gatherease.ics";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -131,13 +142,13 @@ function HomeContent() {
     setSearchCriteria(null);
     try {
       if (roomId) {
-        await fetch(`/api/rooms/${roomId}`, { method: 'DELETE' });
+        await fetch(`/api/rooms/${roomId}`, { method: "DELETE" });
       }
       router.refresh();
     } catch (e) {
-      console.error('Failed to clear saved data', e);
+      console.error("Failed to clear saved data", e);
     }
-  }
+  };
 
   const handleGoBack = () => {
     setAvailability(null);
@@ -164,10 +175,11 @@ function HomeContent() {
       </header>
       <main className="flex flex-1 flex-col items-center gap-8 p-4 md:p-8">
         <div className="w-full max-w-4xl space-y-8">
-          
           {!availability && (
             <div className="animate-in fade-in-0 slide-in-from-top-4 duration-500">
-              {roomId && <DatePollingForm onSubmit={handleFindDates} roomId={roomId} />}
+              {roomId && (
+                <DatePollingForm onSubmit={handleFindDates} roomId={roomId} />
+              )}
             </div>
           )}
 
@@ -178,41 +190,51 @@ function HomeContent() {
                 onBestDateCalculated={handleBestDateCalculated}
                 onReset={handleReset}
                 onGoBack={handleGoBack}
+                onSaveCalendar={handleSaveCalendar}
               />
             </div>
           )}
-          
+
           {bestDate && !suggestions && (
             <div className="animate-in fade-in-0 slide-in-from-top-4 duration-500">
-              <RestaurantSuggestionForm onSuggestion={handleSuggestionGenerated} />
+              <RestaurantSuggestionForm
+                onSuggestion={handleSuggestionGenerated}
+              />
             </div>
           )}
-          
+
           {suggestions && (
             <div className="animate-in fade-in-0 slide-in-from-top-4 duration-500 space-y-8">
               <div className="text-center">
-                 <h2 className="font-headline text-3xl font-bold">Your Suggested Spots!</h2>
-                 <p className="text-muted-foreground">Here are a few great options for your group, sorted by popularity.</p>
+                <h2 className="font-headline text-3xl font-bold">
+                  Your Suggested Spots!
+                </h2>
+                <p className="text-muted-foreground">
+                  Here are a few great options for your group, sorted by
+                  popularity.
+                </p>
               </div>
               <div className="space-y-4">
                 {suggestions.map((s, index) => (
-                  <RestaurantResultCard key={s.restaurantName} data={s} rank={index + 1} />
+                  <RestaurantResultCard
+                    key={s.restaurantName}
+                    data={s}
+                    rank={index + 1}
+                  />
                 ))}
               </div>
               <div className="flex justify-center gap-4">
-                 <Button variant="outline" onClick={handleSearchAgain} disabled={isSearchingAgain}>
+                <Button
+                  variant="outline"
+                  onClick={handleSearchAgain}
+                  disabled={isSearchingAgain}
+                >
                   {isSearchingAgain ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <RefreshCcw className="mr-2 h-4 w-4" />
                   )}
                   Find New Suggestions
-                </Button>
-                <Button variant="outline" onClick={handleSaveCalendar}>
-                  Save to Calendar
-                </Button>
-                <Button variant="outline" onClick={handleCopyLink}>
-                  Share Link
                 </Button>
               </div>
             </div>
@@ -233,4 +255,3 @@ export default function Home() {
     </Suspense>
   );
 }
-
