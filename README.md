@@ -66,5 +66,5 @@ server. To ensure everyone sees the same information:
    `?room=ID` query parameter. Share this full link (or use the "Share Your Room"
    button) so others join the exact same room.
 
-The server requires the `sqlite3` command line tool. If you encounter errors
-related to SQLite, install `sqlite3` and restart the server.
+GatherEase uses an embedded SQLite database and will create `db.sqlite`
+automatically on startup. No external SQLite installation is required.
