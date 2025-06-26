@@ -49,6 +49,15 @@ npm run build
 
 and then start the server with `npm start`.
 
+## Deploying to Vercel
+
+Vercel's serverless functions run on a read-only filesystem, so the local
+`db.sqlite` file cannot be created. GatherEase automatically connects to a
+Postgres database when the `POSTGRES_URL` environment variable is defined.
+Provision a Vercel Postgres instance (or any external Postgres database) and set
+`POSTGRES_URL` in your project settings. If this variable is not set, the app
+falls back to the local SQLite database.
+
 ## Notes
 
 The AI flow relies on environment variables for authentication with Google AI
