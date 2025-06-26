@@ -138,6 +138,32 @@ export function AvailabilityMatrix({
 
   const [selectedBestIndex, setSelectedBestIndex] = useState(0);
 
+  const nextBestOptions = useMemo(() => {
+    if (rankedOptions.length === 0 || bestOptions.length === 0) return [];
+    const byDate = new Map<number, { date: Date; time: string; attendance: number }[]>();
+    for (const opt of rankedOptions) {
+      if (opt.attendance >= bestOptions[0].attendance) continue;
+      const dayKey = startOfDay(opt.date).getTime();
+      const arr = byDate.get(dayKey) ?? [];
+      arr.push(opt);
+      byDate.set(dayKey, arr);
+    }
+
+    const results: { date: Date; time: string; attendance: number }[] = [];
+    for (const opts of byDate.values()) {
+      const any = opts.find(o => o.time === "Any Time");
+      results.push(any ?? opts[0]);
+    }
+
+    results.sort((a, b) => {
+      if (b.attendance !== a.attendance) return b.attendance - a.attendance;
+      if (a.date.getTime() !== b.date.getTime()) return a.date.getTime() - b.date.getTime();
+      return TIME_ORDER.indexOf(a.time) - TIME_ORDER.indexOf(b.time);
+    });
+
+    return results.slice(0, 3);
+  }, [rankedOptions, bestOptions]);
+
   useEffect(() => {
     const opt = bestOptions[selectedBestIndex];
     onBestDateCalculated(opt?.date ?? null, opt?.time ?? null);
@@ -233,13 +259,9 @@ export function AvailabilityMatrix({
               Next Best Options
             </h4>
             <ol className="mt-2 list-decimal list-inside space-y-1 text-muted-foreground">
-              {rankedOptions
-                .filter((opt) => opt.attendance < bestOptions[0].attendance)
-                .slice(0, 3)
-                .map((opt) => (
+              {nextBestOptions.map((opt) => (
                 <li key={`${opt.date.toISOString()}-${opt.time}`}>
-                  {format(opt.date, "EEEE, MMMM do")} at {opt.time} –{" "}
-                  {opt.attendance} / {data.length}
+                  {format(opt.date, "EEEE, MMMM do")} at {opt.time} – {opt.attendance} / {data.length}
                 </li>
               ))}
             </ol>
