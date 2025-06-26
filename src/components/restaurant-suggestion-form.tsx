@@ -26,7 +26,17 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { getRestaurantSuggestion } from "@/app/actions";
 import type { SuggestRestaurantInput, SuggestRestaurantOutput } from "@/ai/flows/suggest-restaurant";
-import { Loader2, Sparkles } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
+import {
+  Loader2,
+  Sparkles,
+  MapPin,
+  Utensils,
+  Vegan,
+  Wallet,
+  CircleDot,
+} from "lucide-react";
 
 const formSchema = z.object({
   location: z.string().min(3, "Please enter a valid city or address."),
@@ -88,92 +98,130 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)}>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+                    <fieldset disabled={isLoading}>
+            <CardContent className="space-y-8">
             <FormField
               control={form.control}
               name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Location</FormLabel>
+                  <FormLabel className="flex items-center gap-2 font-semibold">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    Location
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., San Francisco, CA" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Where does your group want to eat?
+                    This is the only required field. Where are you eating?
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="dietaryRestrictions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dietary Needs</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., vegetarian, gluten-free"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Any allergies or preferences? (optional)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="priceRange"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Price Range</FormLabel>
-                  <FormControl>
-                    <select {...field} className="w-full border rounded-md p-2">
-                      <option value="">Any</option>
-                      <option value="$">$</option>
-                      <option value="$$">$$</option>
-                      <option value="$$$">$$$</option>
-                    </select>
-                  </FormControl>
-                  <FormDescription>Optional</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="radius"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Distance (km)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., 5" {...field} />
-                  </FormControl>
-                  <FormDescription>Optional search radius</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="cuisineTypes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cuisine Preferences</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Italian, Sushi" {...field} />
-                  </FormControl>
-                  <FormDescription>Optional</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
+            <div className="grid gap-6 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="cuisineTypes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Utensils className="h-5 w-5 text-muted-foreground" />
+                      Cuisine Preferences
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Italian, Sushi" {...field} />
+                    </FormControl>
+                    <FormDescription>Optional</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="dietaryRestrictions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Vegan className="h-5 w-5 text-muted-foreground" />
+                      Dietary Needs
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., vegetarian, gluten-free"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Any allergies or preferences? (optional)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="priceRange"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Wallet className="h-5 w-5 text-muted-foreground" />
+                      Price Range
+                    </FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="grid grid-cols-4 gap-2 pt-2"
+                      >
+                        {['Any', '$', '$$', '$$$'].map(val => {
+                          const id = `price-${val}`;
+                          const value = val === 'Any' ? '' : val;
+                          return (
+                            <FormItem key={id}>
+                              <FormControl>
+                                <RadioGroupItem value={value} id={id} className="sr-only" />
+                              </FormControl>
+                              <FormLabel
+                                htmlFor={id}
+                                className={cn(
+                                  "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                                  field.value === value && "border-primary"
+                                )}
+                              >
+                                {val}
+                              </FormLabel>
+                            </FormItem>
+                          )
+                        })}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="radius"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <CircleDot className="h-5 w-5 text-muted-foreground" />
+                      Distance (km)
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g., 5" {...field} />
+                    </FormControl>
+                    <FormDescription>Optional search radius</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+                      </CardContent>
+          </fieldset>
           <CardFooter className="flex justify-end">
-            <Button type="submit" size="lg" disabled={isLoading} className="bg-accent text-accent-foreground hover:bg-accent/90">
+            <Button type="submit" size="lg" disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90">
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (

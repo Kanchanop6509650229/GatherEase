@@ -22,12 +22,20 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  CheckCircle2,
-  XCircle,
-  Users,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   ArrowLeft,
+  CalendarPlus,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Star,
+  Users,
+  XCircle,
 } from "lucide-react";
 import { format, startOfDay } from "date-fns";
 
@@ -187,61 +195,69 @@ export function AvailabilityMatrix({
       </CardHeader>
       <CardContent>
         {selectedBest ? (
-          <div className="mb-6 rounded-lg border border-primary bg-primary/10 p-4 text-center">
-            <h3 className="font-headline font-semibold text-lg text-primary">
-              {bestOptions.length > 1
-                ? `${bestOptions.length} Best Times Found!`
-                : "Best Time Found!"}
-            </h3>
-            <p className="text-muted-foreground">
-              {bestOptions.length > 1 ? "Choose the best option for your get-together:" : "The best time for your get-together is"}{" "}
-              <span className="font-bold text-foreground">
-                {format(selectedBest.date, "EEEE, MMMM do")}
-              </span>{" "}
-              at{" "}
-              <span className="font-bold text-foreground">{selectedBest.time}</span>, with{" "}
-              <span className="font-bold text-foreground">
-                {selectedBest.attendance} out of {data.length} people
-              </span>{" "}
-              available.
-            </p>
-            {bestOptions.length > 1 && (
-              <div className="mt-2 flex items-center justify-center gap-2">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() =>
-                    setSelectedBestIndex((idx) => Math.max(idx - 1, 0))
-                  }
-                  disabled={selectedBestIndex === 0}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium">
-                  {format(selectedBest.date, "EEE, MMM d")} at {selectedBest.time}
-                </span>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() =>
-                    setSelectedBestIndex((idx) =>
-                      Math.min(idx + 1, bestOptions.length - 1)
-                    )
-                  }
-                  disabled={selectedBestIndex === bestOptions.length - 1}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+          <div className="mb-6 rounded-xl border-2 border-primary bg-primary/5 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div className="mb-4 sm:mb-0">
+                  <h3 className="font-headline text-xl font-bold text-primary-foreground bg-primary rounded-full px-4 py-1 inline-block mb-2">
+                    {bestOptions.length > 1
+                      ? `Top ${bestOptions.length} Options`
+                      : "Best Option"}
+                  </h3>
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground">
+                    {format(selectedBest.date, "EEEE, MMMM do")}
+                  </p>
+                  <p className="text-xl font-semibold text-muted-foreground">
+                    {selectedBest.time}
+                  </p>
+                </div>
+                <div className="flex flex-col items-center rounded-lg bg-background p-3">
+                   <div className="flex items-center gap-2">
+                    <Users className="h-6 w-6 text-primary"/>
+                    <span className="text-3xl font-bold text-primary">{selectedBest.attendance}</span>
+                    <span className="text-lg text-muted-foreground">/ {data.length}</span>
+                   </div>
+                   <p className="text-sm font-medium text-muted-foreground">Attendees</p>
+                </div>
               </div>
-            )}
-            <Button
-              className="mt-2"
-              variant="outline"
-              onClick={() => onSaveCalendar(selectedBest.date, selectedBest.time)}
-            >
-              Save to Calendar
-            </Button>
-          </div>
+
+              {bestOptions.length > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() =>
+                      setSelectedBestIndex((idx) => Math.max(idx - 1, 0))
+                    }
+                    disabled={selectedBestIndex === 0}
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  <span className="text-sm font-medium text-center w-48">
+                    Option {selectedBestIndex + 1} of {bestOptions.length}
+                  </span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() =>
+                      setSelectedBestIndex((idx) =>
+                        Math.min(idx + 1, bestOptions.length - 1)
+                      )
+                    }
+                    disabled={selectedBestIndex === bestOptions.length - 1}
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+              )}
+              <Button
+                size="lg"
+                className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => onSaveCalendar(selectedBest.date, selectedBest.time)}
+              >
+                <CalendarPlus className="mr-2 h-5 w-5" />
+                Confirm & Add to Calendar
+              </Button>
+            </div>
         ) : (
           <div className="mb-6 rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
             <h3 className="font-semibold text-lg text-destructive font-headline">
@@ -254,18 +270,23 @@ export function AvailabilityMatrix({
           </div>
         )}
         {selectedBest && rankedOptions.length > bestOptions.length && (
-          <div className="mb-6 rounded-lg border bg-muted/20 p-4">
-            <h4 className="font-headline font-semibold text-lg">
-              Next Best Options
-            </h4>
-            <ol className="mt-2 list-decimal list-inside space-y-1 text-muted-foreground">
-              {nextBestOptions.map((opt) => (
-                <li key={`${opt.date.toISOString()}-${opt.time}`}>
-                  {format(opt.date, "EEEE, MMMM do")} at {opt.time} – {opt.attendance} / {data.length}
-                </li>
-              ))}
-            </ol>
-          </div>
+          <Accordion type="single" collapsible className="w-full mb-6">
+              <AccordionItem value="item-1">
+                <AccordionTrigger className="text-base font-semibold">
+                  Show Next Best Options
+                </AccordionTrigger>
+                <AccordionContent>
+                  <ol className="mt-2 list-decimal list-inside space-y-2 text-muted-foreground pl-4">
+                    {nextBestOptions.map((opt) => (
+                      <li key={`${opt.date.toISOString()}-${opt.time}`}>
+                        <span className="font-semibold text-foreground">{format(opt.date, "EEE, MMM d")}</span> at {opt.time} –{" "}
+                        <span className="font-semibold text-foreground">{opt.attendance} / {data.length}</span> attendees
+                      </li>
+                    ))}
+                  </ol>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
         )}
         <div className="overflow-x-auto rounded-lg border">
           <Table>
@@ -282,20 +303,21 @@ export function AvailabilityMatrix({
                     <TableHead
                       key={date.toISOString()}
                       className={cn(
-                        "text-center",
-                        isBestDate && "bg-primary/20",
+                        "text-center min-w-[120px] p-2",
+                        isBestDate && "bg-primary/10",
                       )}
                     >
-                      <div>{format(date, "EEE")}</div>
-                      <div className="font-normal text-sm">
+                      <div className="font-semibold">{format(date, "EEE")}</div>
+                      <div className="font-normal text-sm text-muted-foreground">
                         {format(date, "MMM d")}
                       </div>
                       {isBestDate && (
                         <Badge
                           variant="default"
-                          className="mt-1 bg-accent text-accent-foreground"
+                          className="mt-1 bg-primary text-primary-foreground pointer-events-none"
                         >
-                          Best {selectedBest?.time?.replace(/\s\(.*\)/, "")}
+                          <Star className="h-3 w-3 mr-1" />
+                          Best
                         </Badge>
                       )}
                     </TableHead>
@@ -334,24 +356,27 @@ export function AvailabilityMatrix({
                       <TableCell
                         key={date.toISOString()}
                         className={cn(
-                          "text-center align-top pt-3",
-                          isBestDate && "bg-primary/10",
-                          isBestDateTime && "ring-2 ring-primary",
+                          "text-center align-top p-2",
+                          isBestDate && "bg-primary/5",
+                          isBestDateTime && "outline outline-2 outline-offset-[-2px] outline-primary",
                         )}
                       >
                         {availableTimes ? (
-                          <div className="flex flex-col items-center justify-center gap-1">
-                            <CheckCircle2 className="h-6 w-6 text-green-500" />
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              {availableTimes.has("Any Time")
-                                ? "Any"
-                                : Array.from(availableTimes)
-                                    .map((t) => t.replace(/\s\(.*\)/, ""))
-                                    .join(", ")}
-                            </span>
+                          <div className="flex flex-col items-center justify-center gap-1.5">
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                            <div className="flex flex-wrap items-center justify-center gap-1">
+                            {Array.from(availableTimes)
+                                .sort((a, b) => TIME_ORDER.indexOf(a) - TIME_ORDER.indexOf(b))
+                                .map(t => (
+                                  <Badge key={t} variant="secondary" className="text-xs font-medium">
+                                    {t === "Any Time" ? "Any" : t.replace(/\s\(.*\)/, "")}
+                                  </Badge>
+                                ))
+                            }
+                            </div>
                           </div>
                         ) : (
-                          <XCircle className="mx-auto h-6 w-6 text-red-500 opacity-60" />
+                          <XCircle className="mx-auto h-5 w-5 text-destructive/60" />
                         )}
                       </TableCell>
                     );
@@ -362,13 +387,13 @@ export function AvailabilityMatrix({
           </Table>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-end gap-2">
+      <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-2 pt-6">
+        <Button variant="ghost" onClick={onReset} className="text-muted-foreground">
+          Start Over
+        </Button>
         <Button variant="outline" onClick={onGoBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        <Button variant="outline" onClick={onReset}>
-          Start Over
+          Go Back & Edit
         </Button>
       </CardFooter>
     </Card>

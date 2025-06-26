@@ -179,13 +179,19 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
                 return (
                 <div
                   key={participantField.id}
-                  className="flex flex-col gap-4 rounded-lg border bg-background p-4"
+                  className={cn(
+                    "flex flex-col gap-4 rounded-lg border bg-background p-4 transition-all",
+                    participantField.isEditing && "border-primary/50 ring-2 ring-primary/20"
+                  )}
                 >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                    <FormItem 
+                                    <div
+                    className="flex flex-col gap-4 sm:flex-row sm:items-start"
+                    onClick={!participantField.isEditing ? () => toggleExpand(participantField.id) : undefined}
+                    style={{ cursor: !participantField.isEditing ? 'pointer' : 'default' }}
+                  >
+                                        <FormItem
                       className="flex-grow"
-                      onClick={!participantField.isEditing ? () => toggleExpand(participantField.id) : undefined}
-                      style={{ cursor: !participantField.isEditing ? 'pointer' : 'default' }}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <FormLabel className="flex items-center gap-2">
                         Participant {index + 1}
@@ -202,7 +208,7 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
                       />
                       <FormMessage />
                     </FormItem>
-                    <div className="flex items-center gap-1 self-start pt-6 sm:ml-auto sm:pt-2">
+                                        <div className="flex items-center gap-1 self-start pt-6 sm:ml-auto sm:pt-2" onClick={(e) => e.stopPropagation()}>
                       {participantField.isEditing ? (
                         <>
                           <Button
@@ -222,8 +228,8 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
                             className="text-destructive hover:bg-destructive/10"
                             onClick={() => remove(index)}
                           >
-                            <X className="h-5 w-5" />
-                            <span className="sr-only">Cancel</span>
+                            <Trash2 className="h-5 w-5" />
+                            <span className="sr-only">Remove</span>
                           </Button>
                         </>
                       ) : (
@@ -299,42 +305,49 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
                                 />
                               </PopoverContent>
                             </Popover>
-                            <div className="space-y-2 pt-2 max-h-48 overflow-y-auto pr-2">
-                              {field.value?.slice().sort((a,b) => a.date.getTime() - b.date.getTime()).map((availability) => (
-                                  <div key={availability.date.toISOString()} className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50">
-                                    <span className="text-sm font-medium">{format(availability.date, "PPP")}</span>
-                                    <div className="grid gap-1">
-                                      {TIME_OPTIONS.map(option => (
-                                        <label key={option} className="flex items-center gap-2 text-sm">
-                                          <Checkbox
-                                            checked={availability.times.includes(option)}
-                                            onCheckedChange={(checked) => {
-                                              const updatedAvailabilities = field.value.map(a => {
-                                                if (a.date.getTime() !== availability.date.getTime()) return a;
-                                                let times = a.times;
-                                                if (checked) {
-                                                  if (option === 'Any Time') {
-                                                    times = ['Any Time'];
+                            <div className="space-y-3 pt-4">
+                              {field.value && field.value.length > 0 && (
+                                <h4 className="text-sm font-medium tracking-tight text-muted-foreground">
+                                  Set available times for each date:
+                                </h4>
+                              )}
+                              <div className="space-y-2 max-h-56 overflow-y-auto pr-2">
+                                {field.value?.slice().sort((a,b) => a.date.getTime() - b.date.getTime()).map((availability) => (
+                                    <div key={availability.date.toISOString()} className="p-3 rounded-md bg-muted/50">
+                                      <div className="text-sm font-semibold mb-2">{format(availability.date, "PPP")}</div>
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
+                                        {TIME_OPTIONS.map(option => (
+                                          <label key={option} className="flex items-center gap-2 text-sm font-medium">
+                                            <Checkbox
+                                              checked={availability.times.includes(option)}
+                                              onCheckedChange={(checked) => {
+                                                const updatedAvailabilities = field.value.map(a => {
+                                                  if (a.date.getTime() !== availability.date.getTime()) return a;
+                                                  let times = a.times;
+                                                  if (checked) {
+                                                    if (option === 'Any Time') {
+                                                      times = ['Any Time'];
+                                                    } else {
+                                                      times = a.times.filter(t => t !== 'Any Time');
+                                                      if (!times.includes(option)) times.push(option);
+                                                    }
                                                   } else {
-                                                    times = a.times.filter(t => t !== 'Any Time');
-                                                    if (!times.includes(option)) times.push(option);
+                                                    times = a.times.filter(t => t !== option);
+                                                    if (times.length === 0) times = ['Any Time'];
                                                   }
-                                                } else {
-                                                  times = a.times.filter(t => t !== option);
-                                                  if (times.length === 0) times = ['Any Time'];
-                                                }
-                                                return { ...a, times };
-                                              });
-                                              field.onChange(updatedAvailabilities);
-                                            }}
-                                            disabled={!participantField.isEditing}
-                                          />
-                                          {option}
-                                        </label>
-                                      ))}
+                                                  return { ...a, times };
+                                                });
+                                                field.onChange(updatedAvailabilities);
+                                              }}
+                                              disabled={!participantField.isEditing}
+                                            />
+                                            {option}
+                                          </label>
+                                        ))}
+                                      </div>
                                     </div>
-                                  </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
                             <FormMessage />
                           </FormItem>
@@ -376,7 +389,7 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
             <Button
               type="submit"
               size="lg"
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={fields.length === 0 || fields.some(p => p.isEditing)}
             >
               Find Best Date
