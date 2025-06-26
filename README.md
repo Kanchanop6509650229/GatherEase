@@ -12,6 +12,9 @@ same data.
 - **Availability Matrix** – visualize responses and pick the best date.
 - **Restaurant Suggestions** – use an AI flow to recommend places based on
   location and dietary needs.
+- **Room Link Sharing** – copy a unique URL so everyone joins the same room.
+- **Save to Calendar** – export the chosen date as an `.ics` file for easy
+  import into calendar apps.
 
 The core logic lives in [`src/app/page.tsx`](src/app/page.tsx) and the AI flow
 is defined in [`src/ai/flows/suggest-restaurant.ts`](src/ai/flows/suggest-restaurant.ts).
@@ -58,11 +61,19 @@ Provision a Vercel Postgres instance (or any external Postgres database) and set
 `POSTGRES_URL` in your project settings. If this variable is not set, the app
 falls back to the local SQLite database.
 
+## Documentation and Style
+
+More design details, including color palette and layout guidelines, are
+available in [docs/blueprint.md](docs/blueprint.md). Refer to this file if you
+plan to customize the UI or extend the demo.
+
 ## Notes
 
 The AI flow relies on environment variables for authentication with Google AI
 models. Create a `.env` file in the project root with the necessary keys before
-running `npm run genkit:dev`.
+running `npm run genkit:dev`. At a minimum this should include credentials for
+the Google AI project (e.g. `GOOGLE_APPLICATION_CREDENTIALS` and your project
+ID). Without these values the Genkit development server cannot start.
 
 ## Using the App with Multiple Devices
 
