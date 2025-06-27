@@ -303,7 +303,7 @@ export function AvailabilityMatrix({
                     <TableHead
                       key={date.toISOString()}
                       className={cn(
-                        "text-center min-w-[120px] p-2",
+                        "text-center min-w-[120px] px-3 py-2 sm:py-3",
                         isBestDate && "bg-primary/10",
                       )}
                     >
@@ -356,7 +356,7 @@ export function AvailabilityMatrix({
                       <TableCell
                         key={date.toISOString()}
                         className={cn(
-                          "text-center align-top p-2",
+                          "text-center align-top px-3 py-2 sm:py-3",
                           isBestDate && "bg-primary/5",
                           isBestDateTime && "outline outline-2 outline-offset-[-2px] outline-primary",
                         )}

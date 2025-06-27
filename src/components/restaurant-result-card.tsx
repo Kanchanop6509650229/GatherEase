@@ -50,7 +50,7 @@ export function RestaurantResultCard({ data, rank }: RestaurantResultCardProps) 
           <span className="font-headline text-3xl font-bold text-primary">#{rank}</span>
         </div>
         <div className="flex-1">
-          <CardContent className="space-y-4 p-6">
+          <CardContent className="space-y-4 p-6 sm:p-8">
             <h3 className="font-headline text-2xl font-bold">{data.restaurantName}</h3>
             
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -76,7 +76,7 @@ export function RestaurantResultCard({ data, rank }: RestaurantResultCardProps) 
               />
             </div>
           </CardContent>
-          <CardFooter className="flex justify-end bg-muted/50 p-4">
+          <CardFooter className="flex justify-end bg-muted/50 p-4 sm:p-6">
             <Button asChild variant="default" className="bg-primary text-primary-foreground">
               <a href={data.googleMapsUrl} target="_blank" rel="noopener noreferrer">
                 View on Google Maps <ExternalLink className="ml-2 h-4 w-4"/>
