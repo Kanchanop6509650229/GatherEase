@@ -132,9 +132,32 @@ export function AvailabilityMatrix({
         return TIME_ORDER.indexOf(a.time) - TIME_ORDER.indexOf(b.time);
       });
 
-      const bestOptions = rankedOptions.filter(
-        opt => opt.attendance === maxAttendance,
-      );
+      const bestOptions: { date: Date; time: string; attendance: number }[] = [];
+      if (maxAttendance > 0) {
+        const byDate = new Map<number, { date: Date; time: string; attendance: number }[]>();
+        for (const opt of rankedOptions) {
+          if (opt.attendance !== maxAttendance) continue;
+          const key = startOfDay(opt.date).getTime();
+          const arr = byDate.get(key) ?? [];
+          arr.push(opt);
+          byDate.set(key, arr);
+        }
+
+        for (const opts of byDate.values()) {
+          const any = opts.find(o => o.time === "Any Time");
+          if (any) {
+            bestOptions.push(any);
+          } else {
+            bestOptions.push(...opts);
+          }
+        }
+
+        bestOptions.sort((a, b) => {
+          if (a.date.getTime() !== b.date.getTime())
+            return a.date.getTime() - b.date.getTime();
+          return TIME_ORDER.indexOf(a.time) - TIME_ORDER.indexOf(b.time);
+        });
+      }
 
       return {
         uniqueDates,
