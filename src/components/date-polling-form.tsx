@@ -166,10 +166,10 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)}>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 p-6 sm:p-8">
             <div className="space-y-4 min-h-[10rem]">
               {fields.length === 0 && (
-                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 h-full p-8 text-center">
+                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 h-full p-8 sm:p-12 text-center">
                     <p className="text-muted-foreground font-semibold">No participants yet.</p>
                     <p className="text-muted-foreground text-sm">Click the button below to add someone to the plan.</p>
                  </div>
@@ -385,7 +385,7 @@ export function DatePollingForm({ onSubmit, roomId }: DatePollingFormProps) {
               Add Participant
             </Button>
           </CardContent>
-          <CardFooter className="flex justify-end">
+          <CardFooter className="flex justify-end p-4 sm:p-6">
             <Button
               type="submit"
               size="lg"

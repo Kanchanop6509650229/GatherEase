@@ -99,7 +99,7 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)}>
                     <fieldset disabled={isLoading}>
-            <CardContent className="space-y-8">
+            <CardContent className="space-y-8 p-6 sm:p-8">
             <FormField
               control={form.control}
               name="location"
@@ -220,7 +220,7 @@ export function RestaurantSuggestionForm({ onSuggestion }: RestaurantSuggestionF
             </div>
                       </CardContent>
           </fieldset>
-          <CardFooter className="flex justify-end">
+          <CardFooter className="flex justify-end p-4 sm:p-6">
             <Button type="submit" size="lg" disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90">
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

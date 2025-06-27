@@ -173,7 +173,7 @@ function HomeContent() {
           </Button>
         </div>
       </header>
-      <main className="flex flex-1 flex-col items-center gap-8 p-4 md:p-8">
+      <main className="flex flex-1 flex-col items-center gap-10 p-6 md:p-12">
         <div className="w-full max-w-4xl space-y-8">
           {!availability && (
             <div className="animate-in fade-in-0 slide-in-from-top-4 duration-500">
